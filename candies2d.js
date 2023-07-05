@@ -1,6 +1,7 @@
 var board = [];
 var rows = 8;
 var columns = 8;
+var values = [];
 
 // var colours = ["white", "red", "green", "blue", "orange", "purple"];
 var colours = ["white", "#eb4d4b", "#6ab04c", "#e056fd", "#30336b", "#22a6b3"];
@@ -20,22 +21,36 @@ window.onload = function () {
 function startGame() {
   movesCount = 0;
   clickedList = [];
+  values = [];
   emptyTiles = 0;
   gameOver = false;
   board = [];
   document.getElementById("moves-count").innerText = movesCount;
   document.getElementById("board").innerHTML = "";
   document.getElementById("game-over").innerText = "";
+  // generate values
+  for (let r = 0; r < rows; r++) {
+    let vrow = [];
+    for (let c = 0; c < columns; c++) {
+      vrow.push(1 + Math.floor(Math.random() * 5));
+    }
+    values.push(vrow);
+  }
+
+  // Eliminate diagonal matches
+  while (values[0][0] == values[rows - 1][columns - 1]) {
+    values[rows - 1][columns - 1] = 1 + Math.floor(Math.random() * 5);
+  }
+
+  while (values[0][columns - 1] == values[rows - 1][0]) {
+    values[rows - 1][0] = 1 + Math.floor(Math.random() * 5);
+  }
+
   //populate our board
   for (let r = 0; r < rows; r++) {
     let row = [];
     for (let c = 0; c < columns; c++) {
-      let tile = document.createElement("div");
-      let value = 1 + Math.floor(Math.random() * 5);
-      tile.id = r.toString() + "-" + c.toString() + "-" + value.toString();
-      tile.style.backgroundColor = colours[value];
-      tile.innerHTML = value.toString();
-      tile.addEventListener("click", clickTile);
+      let tile = makeTile(r, c, values[r][c]);
       document.getElementById("board").append(tile);
       row.push(tile);
     }
@@ -52,6 +67,15 @@ function startGame() {
     }
   });
 
+}
+
+function makeTile(r, c, value) {
+  let tile = document.createElement("div");
+  tile.id = r.toString() + "-" + c.toString() + "-" + value.toString();
+  tile.style.backgroundColor = colours[value];
+  tile.innerHTML = value.toString();
+  tile.addEventListener("click", clickTile);
+  return tile;
 }
 
 function update() {
