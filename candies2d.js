@@ -1,0 +1,130 @@
+var board = [];
+var rows = 8;
+var columns = 8;
+
+// var colours = ["white", "red", "green", "blue", "orange", "purple"];
+var colours = ["white", "#eb4d4b", "#6ab04c", "#e056fd", "#30336b", "#22a6b3"];
+
+
+var movesCount = 0;
+var emptyTiles = 0;
+var clickedList = [];
+
+var gameOver = false;
+
+window.onload = function () {
+  startGame();
+}
+
+
+function startGame() {
+  movesCount = 0;
+  clickedList = [];
+  emptyTiles = 0;
+  gameOver = false;
+  board = [];
+  document.getElementById("moves-count").innerText = movesCount;
+  document.getElementById("board").innerHTML = "";
+  document.getElementById("game-over").innerText = "";
+  //populate our board
+  for (let r = 0; r < rows; r++) {
+    let row = [];
+    for (let c = 0; c < columns; c++) {
+      let tile = document.createElement("div");
+      let value = 1 + Math.floor(Math.random() * 5);
+      tile.id = r.toString() + "-" + c.toString() + "-" + value.toString();
+      tile.style.backgroundColor = colours[value];
+      tile.innerHTML = value.toString();
+      tile.addEventListener("click", clickTile);
+      document.getElementById("board").append(tile);
+      row.push(tile);
+    }
+    board.push(row);
+  }
+
+  document.addEventListener("keyup", (e) => {
+    console.log(e, clickedList);
+    if (e.code == "Enter" && clickedList.length > 0) {
+      update();
+    }
+    if (e.code == "Space" && gameOver) {
+      startGame();
+    }
+  });
+
+}
+
+function update() {
+  if (gameOver || clickedList.length == 0) {
+    return;
+  }
+
+  let tile1 = clickedList[0];
+  let tile2 = tile1;
+  if (clickedList.length > 1) {
+    tile2 = clickedList[1];
+  }
+
+  if (tile1.style.backgroundColor != tile2.style.backgroundColor) {
+    return;
+  }
+
+  tile1.classList.remove("tile-clicked");
+  tile1.style.border = "1px solid whitesmoke";
+  tile2.classList.remove("tile-clicked");
+  tile2.style.border = "1px solid whitesmoke";
+
+  clearBetween(tile1, tile2);
+  clickedList = [];
+  movesCount += 1;
+  document.getElementById("moves-count").innerText = movesCount;
+
+}
+
+function clearBetween(tile1, tile2) {
+  let coords = tile1.id.split("-");
+  let r1 = parseInt(coords[0]);
+  let c1 = parseInt(coords[1]);
+  coords = tile2.id.split("-");
+  let r2 = parseInt(coords[0]);
+  let c2 = parseInt(coords[1]);
+  let rt = Math.min(r1, r2);
+  let rb = Math.max(r1, r2);
+  let cl = Math.min(c1, c2);
+  let cr = Math.max(c1, c2);
+  for (let r = rt; r <= rb; r++) {
+    for (let c = cl; c <= cr; c++) {
+      let tile = board[r][c];
+      if (!tile.classList.contains("empty")) {
+        tile.style.backgroundColor = "white";
+        tile.classList = "empty";
+        tile.innerHTML = "";
+        emptyTiles += 1;
+      }
+    }
+  }
+
+  gameOver = (emptyTiles == rows * columns);
+  if (gameOver) {
+    console.log("Game Over");
+    document.getElementById("game-over").innerText = "Game Over! (space to restart)";
+  }
+}
+
+
+
+function clickTile() {
+  if (gameOver || this.classList.contains("empty")) {
+    return;
+  }
+  if (this.classList.contains("tile-clicked")) {
+    clickedList.remove(this);
+    this.classList.remove("tile-clicked");
+    this.style.border = "1px solid whitesmoke";
+  } else if (clickedList.length < 2) {
+    this.classList.add("tile-clicked");
+    this.style.border = "1px solid black";
+    clickedList.push(this);
+  }
+}
+

@@ -1,5 +1,8 @@
-# Candies2d
+# [Minesweeper](https://youtu.be/AfhfAxKFP-s)
+- Coding Tutorial: https://youtu.be/AfhfAxKFP-s
+- Demo: https://imkennyyip.github.io/Minesweeper/
 
-My first javascript game. Select (at most two) tiles by clicking. Hit <enter> to clear the rectangle they bound provided they're the same colour. Try to clear the whole field in as few moves as possible (one is obvious when available, spotting twos is already a bit of a task though purely mechanical).
+In this tutorial, you will learn to build the classic game, Minesweeper! You will learn how to create click handlers to select a tile and place flags. You will also learn to randomly place mines on the board and use recursion to open up multiple tiles.
 
-Much code derived from ideas at [Kenny Yip Coding](https://www.kennyyipcoding.com/) and suggestions from code copilot.
+
+![minesweeper-preview](https://user-images.githubusercontent.com/78777681/163043942-b0b11838-0099-47b6-8603-30a84d10ea7e.png)
