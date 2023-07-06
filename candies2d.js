@@ -32,7 +32,7 @@ function startGame() {
   for (let r = 0; r < rows; r++) {
     let vrow = [];
     for (let c = 0; c < columns; c++) {
-      vrow.push(Math.floor(0.8 + Math.random() * 5.2));
+      vrow.push(Math.floor(0.9 + Math.random() * 5.1));
     }
     values.push(vrow);
   }
