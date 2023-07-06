@@ -141,14 +141,19 @@ function clickTile() {
   if (gameOver || this.classList.contains("empty")) {
     return;
   }
+
   if (this.classList.contains("tile-clicked")) {
-    clickedList.remove(this);
+    console.log("unclick", this);
+    var index = clickedList.indexOf(this);
+    clickedList.splice(index, 1);
     this.classList.remove("tile-clicked");
     this.style.border = "1px solid whitesmoke";
   } else if (clickedList.length < 2) {
+    console.log("click", this);
     this.classList.add("tile-clicked");
     this.style.border = "1px solid black";
     clickedList.push(this);
+    console.log(clickedList);
   }
 }
 
