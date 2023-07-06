@@ -50,6 +50,9 @@ function startGame() {
   for (let r = 0; r < rows; r++) {
     let row = [];
     for (let c = 0; c < columns; c++) {
+      if (values[r][c] == 0) {
+        emptyTiles += 1;
+      }
       let tile = makeTile(r, c, values[r][c]);
       document.getElementById("board").append(tile);
       row.push(tile);
