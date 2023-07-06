@@ -16,9 +16,9 @@ body {
 }
 
 #board div {
-  width: 48px;
-  height: 48px;
-  border: 1px solid whitesmoke;
+  width: 46px;
+  height: 46px;
+  border: 2px solid whitesmoke;
 
   /* text */
   font-size: 30px;
@@ -30,37 +30,5 @@ body {
 
 .tile-clicked {
   background-color: darkgrey;
-  border: 1px solid black;
-}
-
-.x1 {
-  color: blue;
-}
-
-.x2 {
-  color: green;
-}
-
-.x3 {
-  color: red;
-}
-
-.x4 {
-  color: navy;
-}
-
-.x5 {
-  color: brown;
-}
-
-.x6 {
-  color: teal;
-}
-
-.x7 {
-  color: black;
-}
-
-.x8 {
-  color: gray;
+  border: 2px solid black;
 }
