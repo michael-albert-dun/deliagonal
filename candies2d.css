@@ -19,8 +19,8 @@ body {
   width: 46px;
   height: 46px;
   border: 2px solid whitesmoke;
+  border-radius: 20%;
 
-  /* text */
   font-size: 30px;
   color: white;
   display: flex;
