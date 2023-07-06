@@ -4,7 +4,7 @@ var columns = 8;
 var values = [];
 
 // var colours = ["white", "red", "green", "blue", "orange", "purple"];
-var colours = ["white", "#eb4d4b", "#6ab04c", "#e056fd", "#30336b", "#22a6b3"];
+var colours = ["black", "#eb4d4b", "#6ab04c", "#e056fd", "#30336b", "#22a6b3"];
 
 
 var movesCount = 0;
@@ -32,17 +32,17 @@ function startGame() {
   for (let r = 0; r < rows; r++) {
     let vrow = [];
     for (let c = 0; c < columns; c++) {
-      vrow.push(1 + Math.floor(Math.random() * 5));
+      vrow.push(Math.floor(0.8 + Math.random() * 5.2));
     }
     values.push(vrow);
   }
 
   // Eliminate diagonal matches
-  while (values[0][0] == values[rows - 1][columns - 1]) {
+  while (values[0][0] == values[rows - 1][columns - 1] && values[0][0] != 0) {
     values[rows - 1][columns - 1] = 1 + Math.floor(Math.random() * 5);
   }
 
-  while (values[0][columns - 1] == values[rows - 1][0]) {
+  while (values[0][columns - 1] == values[rows - 1][0] && values[0][columns - 1] != 0) {
     values[rows - 1][0] = 1 + Math.floor(Math.random() * 5);
   }
 
@@ -73,8 +73,10 @@ function makeTile(r, c, value) {
   let tile = document.createElement("div");
   tile.id = r.toString() + "-" + c.toString() + "-" + value.toString();
   tile.style.backgroundColor = colours[value];
-  tile.innerHTML = value.toString();
-  tile.addEventListener("click", clickTile);
+  if (value > 0) {
+    tile.innerHTML = value.toString();
+    tile.addEventListener("click", clickTile);
+  }
   return tile;
 }
 
@@ -89,7 +91,7 @@ function update() {
     tile2 = clickedList[1];
   }
 
-  if (tile1.style.backgroundColor != tile2.style.backgroundColor) {
+  if (tile1.style.backgroundColor != tile2.style.backgroundColor || isBlocked(tile1, tile2)) {
     return;
   }
 
@@ -103,6 +105,41 @@ function update() {
   movesCount += 1;
   document.getElementById("moves-count").innerText = movesCount;
 
+}
+
+function isBlocked(tile1, tile2) {
+  let coords = tile1.id.split("-");
+  let r1 = parseInt(coords[0]);
+  let c1 = parseInt(coords[1]);
+  coords = tile2.id.split("-");
+  let r2 = parseInt(coords[0]);
+  let c2 = parseInt(coords[1]);
+  let rt = Math.min(r1, r2);
+  let rb = Math.max(r1, r2);
+  let cl = Math.min(c1, c2);
+  let cr = Math.max(c1, c2);
+  for (let r = rt; r <= rb; r++) {
+    for (let c = cl; c <= cr; c++) {
+      let tile = board[r][c];
+      if (value(tile) == 0) {
+        console.log("blocked by", tile);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function value(tile) {
+  return parseInt(tile.id.split("-")[2]);
+}
+
+function row(tile) {
+  return parseInt(tile.id.split("-")[0]);
+}
+
+function column(tile) {
+  return parseInt(tile.id.split("-")[1]);
 }
 
 function clearBetween(tile1, tile2) {
