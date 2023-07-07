@@ -2,6 +2,8 @@ var board = [];
 var rows = 8;
 var columns = 8;
 var values = [];
+var overlay;
+
 
 // var colours = ["white", "red", "green", "blue", "orange", "purple"];
 var colours = ["black", "#eb4d4b", "#6ab04c", "#e056fd", "#30336b", "#22a6b3"];
@@ -15,6 +17,8 @@ var gameOver = false;
 
 window.onload = function () {
   startGame();
+  overlay = document.getElementById('overlay')
+  console.log(overlay);
 }
 
 
@@ -60,6 +64,17 @@ function startGame() {
     board.push(row);
   }
 
+  // add event listeners
+  let information = document.getElementById("info");
+  information.addEventListener("click", () => {
+    openModal(document.getElementById("info-modal"));
+  });
+
+  let infoClose = document.getElementById("info-modal-close");
+  infoClose.addEventListener("click", () => {
+    closeModal(document.getElementById("info-modal"));
+  });
+
   document.addEventListener("keyup", (e) => {
     console.log(e, clickedList);
     if (e.code == "Enter" && clickedList.length > 0) {
@@ -67,6 +82,9 @@ function startGame() {
     }
     if (e.code == "Space" && gameOver) {
       startGame();
+    }
+    if (e.code == "KeyI") {
+      openModal(document.getElementById("info-modal"));
     }
   });
 
@@ -197,3 +215,14 @@ function clickTile() {
   }
 }
 
+function openModal(modal) {
+  if (modal == null) return
+  modal.classList.add('active')
+  overlay.classList.add('active')
+}
+
+function closeModal(modal) {
+  if (modal == null) return
+  modal.classList.remove('active')
+  overlay.classList.remove('active')
+}

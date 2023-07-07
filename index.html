@@ -12,8 +12,33 @@
 <body>
   <h1>Moves: <span id="moves-count">0</span></h1>
   <div id="board"></div>
+  <div id="menu">
+    <img id="info" src="info.png" title="Game information (i)">
+  </div>
   <h2 id="game-over"></h2>
   <br>
+
+  <div class="modal" id="info-modal">
+    <div class="modal-header">
+      <div class="title">Game Information</div>
+      <button id="info-modal-close" class="close-button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <h2>Playing</h2>
+      <ul>
+        <li>
+          Select one or two candies (of the same colour), then clear the rectangular area they define using the "Enter"
+        </li>
+        <li>
+          Cleared areas cannot contain solid blocks.
+        </li>
+      </ul>
+      <h2>Keyboard shortcuts</h2>
+      <p><b>I</b>: Open this window.</p>
+    </div>
+  </div>
+
+  <div id="overlay"></div>
 </body>
 
 </html>
