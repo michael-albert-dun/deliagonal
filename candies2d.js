@@ -3,6 +3,7 @@ var rows = 8;
 var columns = 8;
 var values = [];
 var overlay;
+var moves = []; // List of moves for undo purposes
 
 
 // var colours = ["white", "red", "green", "blue", "orange", "purple"];
@@ -70,6 +71,11 @@ function startGame() {
     openModal(document.getElementById("info-modal"));
   });
 
+  let undoButton = document.getElementById("undo");
+  undoButton.addEventListener("click", () => {
+    undo();
+  });
+
   let infoClose = document.getElementById("info-modal-close");
   infoClose.addEventListener("click", () => {
     closeModal(document.getElementById("info-modal"));
@@ -86,9 +92,15 @@ function startGame() {
     if (e.code == "KeyI") {
       openModal(document.getElementById("info-modal"));
     }
+    if (e.code == "KeyZ") {
+      console.log("Undo");
+      undo();
+    }
   });
 
 }
+
+
 
 function makeTile(r, c, value) {
   let tile = document.createElement("div");
@@ -174,6 +186,7 @@ function clearBetween(tile1, tile2) {
   let rb = Math.max(r1, r2);
   let cl = Math.min(c1, c2);
   let cr = Math.max(c1, c2);
+  moves.push([rt, rb, cl, cr]);
   for (let r = rt; r <= rb; r++) {
     for (let c = cl; c <= cr; c++) {
       let tile = board[r][c];
@@ -185,7 +198,8 @@ function clearBetween(tile1, tile2) {
       }
     }
   }
-
+  console.log("Made move", tile1, tile2);
+  console.log("Moves", moves);
   gameOver = (emptyTiles == rows * columns);
   if (gameOver) {
     console.log("Game Over");
@@ -193,7 +207,32 @@ function clearBetween(tile1, tile2) {
   }
 }
 
+function fillBetween(rt, rb, cl, cr) {
+  for (let r = rt; r <= rb; r++) {
+    for (let c = cl; c <= cr; c++) {
+      let tile = board[r][c];
+      if (tile.classList.contains("empty")) {
+        tile.style.backgroundColor = colours[values[r][c]];
+        tile.classList = "";
+        tile.innerHTML = values[r][c];
+        emptyTiles -= 1;
+      }
+    }
+  }
+  movesCount -= 1;
+  document.getElementById("moves-count").innerText = movesCount;
+}
 
+function undo() {
+  console.log("undo", moves, moves.length);
+  if (moves.length == 0) {
+    return;
+  }
+  let move = moves.pop();
+  console.log(move);
+  console.log(moves);
+  fillBetween(move[0], move[1], move[2], move[3]);
+}
 
 function clickTile() {
   if (gameOver || this.classList.contains("empty")) {
