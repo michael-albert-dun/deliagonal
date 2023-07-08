@@ -1,0 +1,16 @@
+\documentclass{standalone}
+\usepackage{tikz}
+
+\begin{document}
+\begin{tikzpicture}
+ % Black circle background
+ \fill[black] (0, 0) circle (2cm);
+ 
+ % White gear icon
+\draw[white, line width=0.3cm] (0, 0) circle (1.1cm);
+\foreach \i in {1,...,8}
+{
+  \draw[white, line width=0.6cm] ({45 * (\i - 1)}:1.2cm) -- ({45 * (\i - 1)}:1.6cm);
+}
+\end{tikzpicture}
+\end{document}
