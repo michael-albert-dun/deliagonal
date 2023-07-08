@@ -96,6 +96,10 @@ function startGame() {
       console.log("Undo");
       undo();
     }
+    if (e.code == "Backspace") {
+      console.log("Unselect last tile")
+      unselectLastTile();
+    }
   });
 
 }
@@ -251,6 +255,14 @@ function clickTile() {
     this.style.border = "2px solid black";
     clickedList.push(this);
     console.log(clickedList);
+  }
+}
+
+function unselectLastTile() {
+  if (clickedList.length > 0) {
+    let tile = clickedList.pop();
+    tile.classList.remove("tile-clicked");
+    tile.style.border = "2px solid whitesmoke";
   }
 }
 
