@@ -1,29 +1,41 @@
-var board = [];
 var rows = 8;
 var columns = 8;
-var values = [];
+var board;
+var values;
+
+var moves;
+var movesCount;
+var emptyTiles;
+var clickedList;
+var gameOver;
+
 var overlay;
-var moves = []; // List of moves for undo purposes
-
-
-// var colours = ["white", "red", "green", "blue", "orange", "purple"];
 var colours = ["black", "#eb4d4b", "#6ab04c", "#e056fd", "#30336b", "#22a6b3"];
 
 
-var movesCount = 0;
-var emptyTiles = 0;
-var clickedList = [];
-
-var gameOver = false;
 
 window.onload = function () {
-  startGame();
+  intialise();
   overlay = document.getElementById('overlay')
   console.log(overlay);
 }
 
 
-function startGame() {
+function intialise() {
+  initialiseVariables();
+  initialiseValues();
+  populateBoard();
+  addEventListeners();
+}
+
+function restart() {
+  initialiseVariables();
+  initialiseValues();
+  populateBoard();
+}
+
+function initialiseVariables() {
+  moves = [];
   movesCount = 0;
   clickedList = [];
   values = [];
@@ -33,7 +45,9 @@ function startGame() {
   document.getElementById("moves-count").innerText = movesCount;
   document.getElementById("board").innerHTML = "";
   document.getElementById("game-over").innerText = "";
-  // generate values
+}
+
+function initialiseValues() {
   for (let r = 0; r < rows; r++) {
     let vrow = [];
     for (let c = 0; c < columns; c++) {
@@ -51,7 +65,10 @@ function startGame() {
     values[rows - 1][0] = 1 + Math.floor(Math.random() * 5);
   }
 
-  //populate our board
+}
+
+function populateBoard() {
+  document.getElementById("board").innerHTML = "";
   for (let r = 0; r < rows; r++) {
     let row = [];
     for (let c = 0; c < columns; c++) {
@@ -64,8 +81,10 @@ function startGame() {
     }
     board.push(row);
   }
+}
 
-  // add event listeners
+function addEventListeners() {
+
   let information = document.getElementById("info");
   information.addEventListener("click", () => {
     openModal(document.getElementById("info-modal"));
@@ -83,26 +102,31 @@ function startGame() {
 
   document.addEventListener("keyup", (e) => {
     console.log(e, clickedList);
-    if (e.code == "Enter" && clickedList.length > 0) {
-      update();
-    }
-    if (e.code == "Space" && gameOver) {
-      startGame();
-    }
-    if (e.code == "KeyI") {
-      openModal(document.getElementById("info-modal"));
-    }
-    if (e.code == "KeyZ") {
-      console.log("Undo");
-      undo();
-    }
-    if (e.code == "Backspace") {
-      console.log("Unselect last tile")
-      unselectLastTile();
+    switch (e.code) {
+      case "Enter":
+        if (clickedList.length > 0) {
+          doMove();
+        }
+        break;
+      case "Space":
+        if (gameOver) {
+          restart();
+        }
+        break;
+      case "KeyI":
+        openModal(document.getElementById("info-modal"));
+        break;
+      case "KeyZ":
+        undo();
+        break;
+      case "Backspace":
+        console.log("Unselect last tile")
+        unselectLastTile();
+        break;
     }
   });
-
 }
+
 
 
 
@@ -117,7 +141,7 @@ function makeTile(r, c, value) {
   return tile;
 }
 
-function update() {
+function doMove() {
   if (gameOver || clickedList.length == 0) {
     return;
   }
