@@ -127,9 +127,6 @@ function addEventListeners() {
   });
 }
 
-
-
-
 function makeTile(r, c, value) {
   let tile = document.createElement("div");
   tile.id = r.toString() + "-" + c.toString() + "-" + value.toString();
