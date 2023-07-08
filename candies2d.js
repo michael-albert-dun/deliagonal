@@ -236,6 +236,10 @@ function undo() {
   console.log(move);
   console.log(moves);
   fillBetween(move[0], move[1], move[2], move[3]);
+  if (gameOver) {
+    gameOver = false;
+    document.getElementById("game-over").innerText = "";
+  }
 }
 
 function clickTile() {
