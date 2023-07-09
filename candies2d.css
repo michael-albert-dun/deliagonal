@@ -16,9 +16,9 @@ body {
 }
 
 #board div {
-  width: 46px;
-  height: 46px;
-  border: 2px solid whitesmoke;
+  width: 44px;
+  height: 44px;
+  border: 3px solid whitesmoke;
   border-radius: 20%;
 
   font-size: 30px;
@@ -42,7 +42,7 @@ body {
   cursor: pointer;
 }
 
-#settings{
+#settings {
   width: 48px;
   height: 48px;
   cursor: pointer;
@@ -50,7 +50,7 @@ body {
 
 .tile-clicked {
   background-color: darkgrey;
-  border: 2px solid black;
+  border: 3px solid black;
 }
 
 .modal {
@@ -115,4 +115,3 @@ body {
   opacity: 1;
   pointer-events: all;
 }
-

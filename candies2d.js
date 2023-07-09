@@ -154,9 +154,9 @@ function doMove() {
   }
 
   tile1.classList.remove("tile-clicked");
-  tile1.style.border = "2px solid whitesmoke";
+  tile1.style.border = "3px solid whitesmoke";
   tile2.classList.remove("tile-clicked");
-  tile2.style.border = "2px solid whitesmoke";
+  tile2.style.border = "3px solid whitesmoke";
 
   clearBetween(tile1, tile2);
   clickedList = [];
@@ -273,11 +273,11 @@ function clickTile() {
     var index = clickedList.indexOf(this);
     clickedList.splice(index, 1);
     this.classList.remove("tile-clicked");
-    this.style.border = "2px solid whitesmoke";
+    this.style.border = "3px solid whitesmoke";
   } else if (clickedList.length < 2) {
     console.log("click", this);
     this.classList.add("tile-clicked");
-    this.style.border = "2px solid black";
+    this.style.border = "3px solid black";
     clickedList.push(this);
     console.log(clickedList);
   }
@@ -287,7 +287,7 @@ function unselectLastTile() {
   if (clickedList.length > 0) {
     let tile = clickedList.pop();
     tile.classList.remove("tile-clicked");
-    tile.style.border = "2px solid whitesmoke";
+    tile.style.border = "3px solid whitesmoke";
   }
 }
 
