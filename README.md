@@ -9,3 +9,7 @@ Much code derived from ideas at [Kenny Yip Coding](https://www.kennyyipcoding.co
 - Define a 'target' area. Objective is to clear *only* the squares not in the target area.
 - Start with more of a <> shape (i.e., remove a triangle of squares from each corner)
 - Include a few "rocks". You can't clear a rock.
+
+## Known bugs
+
+- Undo is broken, it fills a full rectangle even if the move only removed some of the tiles.
