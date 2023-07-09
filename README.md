@@ -12,4 +12,4 @@ Much code derived from ideas at [Kenny Yip Coding](https://www.kennyyipcoding.co
 
 ## Known bugs
 
-- Undo is broken, it fills a full rectangle even if the move only removed some of the tiles.
+- Undo is broken, it fills a full rectangle even if the move only removed some of the tiles (fixed - but more refactoring needed as a result)

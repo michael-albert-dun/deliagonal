@@ -200,7 +200,35 @@ function column(tile) {
   return parseInt(tile.id.split("-")[1]);
 }
 
+function isEmpty(r, c) {
+  return board[r][c].classList.contains("empty");
+}
+
+function clearTile(r, c) {
+  let tile = board[r][c];
+  if (tile.classList.contains("empty")) {
+    return;
+  }
+  tile.style.backgroundColor = "white";
+  tile.classList = "empty";
+  emptyTiles += 1;
+}
+
+function fillTile(r, c) {
+  console.log("Filling at ", r, c);
+  console.log(board[r][c]);
+  let tile = board[r][c];
+  if (!tile.classList.contains("empty")) {
+    return;
+  }
+  let value = values[r][c];
+  tile.style.backgroundColor = colours[value];
+  tile.classList = "tile";
+  emptyTiles -= 1;
+}
+
 function clearBetween(tile1, tile2) {
+  let cleared = [];
   let coords = tile1.id.split("-");
   let r1 = parseInt(coords[0]);
   let c1 = parseInt(coords[1]);
@@ -211,18 +239,17 @@ function clearBetween(tile1, tile2) {
   let rb = Math.max(r1, r2);
   let cl = Math.min(c1, c2);
   let cr = Math.max(c1, c2);
-  moves.push([rt, rb, cl, cr]);
   for (let r = rt; r <= rb; r++) {
     for (let c = cl; c <= cr; c++) {
-      let tile = board[r][c];
-      if (!tile.classList.contains("empty")) {
-        tile.style.backgroundColor = "white";
-        tile.classList = "empty";
-        tile.innerHTML = "";
-        emptyTiles += 1;
+      if (!isEmpty(r, c)) {
+        clearTile(r, c);
+        cleared.push([r,c]);
       }
     }
   }
+  console.log("Cleared", cleared.length, "tiles")
+  moves.push(cleared);
+  console.log("Moves", moves);
   console.log("Made move", tile1, tile2);
   console.log("Moves", moves);
   gameOver = (emptyTiles == rows * columns);
@@ -253,10 +280,11 @@ function undo() {
   if (moves.length == 0) {
     return;
   }
-  let move = moves.pop();
-  console.log(move);
-  console.log(moves);
-  fillBetween(move[0], move[1], move[2], move[3]);
+  let cleared = moves.pop();
+  console.log("In undo filling", cleared);
+  cleared.forEach(coord => fillTile(coord[0], coord[1]));
+  movesCount -= 1;
+  document.getElementById("moves-count").innerText = movesCount;
   if (gameOver) {
     gameOver = false;
     document.getElementById("game-over").innerText = "";
