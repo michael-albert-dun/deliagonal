@@ -1,125 +1,86 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Candies 2D</title>
-  <link rel="stylesheet" href="candies2d.css">
-  <script src="candies2d.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CandyClear</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="src/game.js" defer></script>
 </head>
 
 <body>
-  <h1>Moves: <span id="moves-count">0</span></h1>
-  <div id="board"></div>
-  <div id="menu">
-    <svg id="info" fill="#000000" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg"
-      xmlns:xlink="http://www.w3.org/1999/xlink" width="800px" height="800px" viewBox="0 0 416.979 416.979"
-      xml:space="preserve">
-      <g>
-        <path
-          d="M356.004,61.156c-81.37-81.47-213.377-81.551-294.848-0.182c-81.47,81.371-81.552,213.379-0.181,294.85
-      		c81.369,81.47,213.378,81.551,294.849,0.181C437.293,274.636,437.375,142.626,356.004,61.156z M237.6,340.786
-      		c0,3.217-2.607,5.822-5.822,5.822h-46.576c-3.215,0-5.822-2.605-5.822-5.822V167.885c0-3.217,2.607-5.822,5.822-5.822h46.576
-      		c3.215,0,5.822,2.604,5.822,5.822V340.786z M208.49,137.901c-18.618,0-33.766-15.146-33.766-33.765
-      		c0-18.617,15.147-33.766,33.766-33.766c18.619,0,33.766,15.148,33.766,33.766C242.256,122.755,227.107,137.901,208.49,137.901z" />
-      </g>
-      <title>Information (i)</title>
-    </svg>
-    <svg id="undo" height="800px" width="800px" version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg"
-      xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve">
-      <style type="text/css">
-        .st0 {
-          fill: #000000;
-        }
-      </style>
-      <g>
-        <path class="st0" d="M255.996,0.005C114.615,0.005,0,114.62,0,256c0,141.38,114.615,255.996,255.996,255.996
-    		C397.39,511.995,512,397.38,512,256C512,114.62,397.39,0.005,255.996,0.005z M308.86,377.124l-87.064,45.899l1.878-35.924
-    		c-23.849-5.799-45.64-18.064-63.186-35.609c-25.489-25.44-39.525-59.346-39.525-95.49c0-18.633,3.746-36.714,11.132-53.741
-    		l1.435-3.299l31.959,13.879l-1.426,3.298c-5.466,12.633-8.238,26.047-8.238,39.863c0,26.766,10.422,51.926,29.344,70.84
-    		c11.374,11.378,25.261,19.835,40.381,24.625l1.487-28.072l90.876,48.916L308.86,377.124z M379.892,309.733l-1.43,3.298
-    		l-31.963-13.879l1.434-3.298c5.461-12.589,8.233-25.994,8.233-39.855c0-26.766-10.422-51.925-29.344-70.848
-    		c-11.427-11.387-25.314-19.844-40.38-24.625l-1.488,28.072l-90.95-48.925l9.194-4.816l17.146-9.08l69.852-36.801l-1.877,35.871
-    		c23.87,5.842,45.662,18.133,63.184,35.652c25.533,25.538,39.569,59.452,39.526,95.499
-    		C391.029,274.668,387.283,292.749,379.892,309.733z" />
-      </g>
-      <title>Undo last move (z)</title>
-    </svg>
-    <svg id="settings" mlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="113.386"
-      height="113.386" viewBox="0 0 113.386 113.386">
-      <path fill-rule="nonzero" fill="rgb(0%, 0%, 0%)" fill-opacity="1"
-        d="M 113.386719 56.691406 C 113.386719 25.382812 88.003906 0 56.691406 0 C 25.382812 0 0 25.382812 0 56.691406 C 0 88.003906 25.382812 113.386719 56.691406 113.386719 C 88.003906 113.386719 113.386719 88.003906 113.386719 56.691406 Z M 113.386719 56.691406 " />
-      <path fill="none" stroke-width="8.50412" stroke-linecap="butt" stroke-linejoin="miter"
-        stroke="rgb(100%, 100%, 100%)" stroke-opacity="1" stroke-miterlimit="10"
-        d="M 31.182 0.00159375 C 31.182 17.220344 17.221062 31.181281 -0.00159375 31.181281 C -17.220344 31.181281 -31.181281 17.220344 -31.181281 0.00159375 C -31.181281 -17.221063 -17.220344 -31.182 -0.00159375 -31.182 C 17.221062 -31.182 31.182 -17.221063 31.182 0.00159375 Z M 31.182 0.00159375 "
-        transform="matrix(1, 0, 0, -1, 56.693, 56.693)" />
-      <path fill="none" stroke-width="17.00826" stroke-linecap="butt" stroke-linejoin="miter"
-        stroke="rgb(100%, 100%, 100%)" stroke-opacity="1" stroke-miterlimit="10"
-        d="M 34.017937 0.00159375 L 45.353875 0.00159375 " transform="matrix(1, 0, 0, -1, 56.693, 56.693)" />
-      <path fill="none" stroke-width="17.00826" stroke-linecap="butt" stroke-linejoin="miter"
-        stroke="rgb(100%, 100%, 100%)" stroke-opacity="1" stroke-miterlimit="10"
-        d="M 24.053094 24.052375 L 32.072625 32.071906 " transform="matrix(1, 0, 0, -1, 56.693, 56.693)" />
-      <path fill="none" stroke-width="17.00826" stroke-linecap="butt" stroke-linejoin="miter"
-        stroke="rgb(100%, 100%, 100%)" stroke-opacity="1" stroke-miterlimit="10"
-        d="M -0.00159375 34.017219 L -0.00159375 45.353156 " transform="matrix(1, 0, 0, -1, 56.693, 56.693)" />
-      <path fill="none" stroke-width="17.00826" stroke-linecap="butt" stroke-linejoin="miter"
-        stroke="rgb(100%, 100%, 100%)" stroke-opacity="1" stroke-miterlimit="10"
-        d="M -24.052375 24.052375 L -32.071906 32.071906 " transform="matrix(1, 0, 0, -1, 56.693, 56.693)" />
-      <path fill="none" stroke-width="17.00826" stroke-linecap="butt" stroke-linejoin="miter"
-        stroke="rgb(100%, 100%, 100%)" stroke-opacity="1" stroke-miterlimit="10"
-        d="M -34.017219 0.00159375 L -45.353156 0.00159375 " transform="matrix(1, 0, 0, -1, 56.693, 56.693)" />
-      <path fill="none" stroke-width="17.00826" stroke-linecap="butt" stroke-linejoin="miter"
-        stroke="rgb(100%, 100%, 100%)" stroke-opacity="1" stroke-miterlimit="10"
-        d="M -24.052375 -24.053094 L -32.071906 -32.072625 " transform="matrix(1, 0, 0, -1, 56.693, 56.693)" />
-      <path fill="none" stroke-width="17.00826" stroke-linecap="butt" stroke-linejoin="miter"
-        stroke="rgb(100%, 100%, 100%)" stroke-opacity="1" stroke-miterlimit="10"
-        d="M -0.00159375 -34.017938 L -0.00159375 -45.353875 " transform="matrix(1, 0, 0, -1, 56.693, 56.693)" />
-      <path fill="none" stroke-width="17.00826" stroke-linecap="butt" stroke-linejoin="miter"
-        stroke="rgb(100%, 100%, 100%)" stroke-opacity="1" stroke-miterlimit="10"
-        d="M 24.053094 -24.053094 L 32.072625 -32.072625 " transform="matrix(1, 0, 0, -1, 56.693, 56.693)" />
-      <title>Settings</title>
-    </svg>
+  <main class="app">
+    <section class="play-area" aria-labelledby="title">
+      <header class="top-bar">
+        <h1 id="title">CandyClear</h1>
+        <button id="info-button" class="icon-button info-button" type="button" aria-label="Information">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 11v5" />
+            <path d="M12 8h.01" />
+          </svg>
+        </button>
+        <div id="info-panel" class="info-panel" hidden>
+          <p>Select two candies of the same colour to clear the rectangle between them.</p>
+          <p>Select the same candy twice to clear just that candy.</p>
+        </div>
+      </header>
 
-  </div>
-  <h2 id="game-over"></h2>
-  <br>
+      <div id="board" class="board" aria-label="CandyClear board"></div>
 
-
-  <div class="modal" id="info-modal">
-    <div class="modal-header">
-      <div class="title">Game Information</div>
-      <button id="info-modal-close" class="close-button">&times;</button>
-    </div>
-    <div class="modal-body">
-      <h2>Playing</h2>
-      <ul>
-        <li>
-          Select one or two candies (of the same colour), then press "Enter" to clear the rectangular area they define.
-        </li>
-        <li>
-          Cleared areas cannot contain solid blocks.
-        </li>
-      </ul>
-      <h2>Keyboard shortcuts</h2>
-      <table>
-        <tr>
-          <td>I</td>
-          <td>Open this window</td>
-        </tr>
-        <tr>
-          <td>Z</td>
-          <td>Undo last move</td>
-        </tr>
-        <tr>
-          <td>&#x232b;</td>
-          <td>Unselect last selected candy</td>
-        </tr>
-      </table>
-    </div>
-  </div>
-
-  <div id="overlay"></div>
+      <footer class="game-footer">
+        <div class="footer-panel footer-panel-left">
+          <button id="new-button" type="button">New</button>
+        </div>
+        <div class="footer-panel footer-panel-center">
+          <p id="challenge" class="challenge" aria-live="polite">Clear in 3</p>
+          <p id="score" class="score" aria-live="polite"></p>
+        </div>
+        <div class="footer-panel footer-panel-right">
+          <button id="undo-button" class="icon-button" type="button" aria-label="Undo" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 14 4 9l5-5" />
+              <path d="M4 9h10a6 6 0 0 1 0 12h-3" />
+            </svg>
+          </button>
+          <button id="settings-button" class="icon-button" type="button" aria-label="Settings">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z" />
+            </svg>
+          </button>
+          <form id="settings-panel" class="settings-panel" hidden>
+            <fieldset>
+              <legend>Candies per colour</legend>
+              <div class="segmented-control">
+                <label>
+                  <input type="radio" name="copies-per-color" value="2">
+                  <span>2</span>
+                </label>
+                <label>
+                  <input type="radio" name="copies-per-color" value="3">
+                  <span>3</span>
+                </label>
+                <label>
+                  <input type="radio" name="copies-per-color" value="4" checked>
+                  <span>4</span>
+                </label>
+                <label>
+                  <input type="radio" name="copies-per-color" value="5">
+                  <span>5</span>
+                </label>
+                <label>
+                  <input type="radio" name="copies-per-color" value="6">
+                  <span>6</span>
+                </label>
+              </div>
+            </fieldset>
+          </form>
+        </div>
+      </footer>
+    </section>
+  </main>
 </body>
 
 </html>

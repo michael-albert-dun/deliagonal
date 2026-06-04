@@ -1,0 +1,15 @@
+CandyClear minimum move distribution
+grid: 6x6
+colours: 4
+forbid boundary pairs: yes
+trials: 20
+seed: 7
+
+moves,count,percent
+4,9,45.00
+5,10,50.00
+6,1,5.00
+
+average moves: 4.600
+average visited states: 20783.7
+max visited states: 105975
