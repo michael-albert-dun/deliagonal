@@ -144,21 +144,47 @@ h1 {
 }
 
 .board {
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: repeat(var(--board-cols, 4), minmax(0, 1fr));
   aspect-ratio: 1;
   gap: 0;
   padding: 14px;
   border-radius: 8px;
-  background: var(--board-bg);
+  background:
+    linear-gradient(rgba(239, 231, 240, 0.76), rgba(239, 231, 240, 0.76)),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.16) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(80, 48, 58, 0.06) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(0deg, rgba(164, 47, 49, 0.18) 0 14px, transparent 14px 28px),
+    repeating-linear-gradient(90deg, rgba(164, 47, 49, 0.18) 0 14px, transparent 14px 28px),
+    var(--board-bg);
   overflow: hidden;
   box-shadow:
     0 22px 48px rgba(55, 36, 64, 0.22),
     inset 0 0 0 1px rgba(72, 52, 82, 0.1);
 }
 
+.board::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.28) 0 2px, transparent 2px 7px) top / 100% 12px no-repeat,
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.2) 0 2px, transparent 2px 7px) bottom / 100% 12px no-repeat,
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.24) 0 2px, transparent 2px 7px) left / 12px 100% no-repeat,
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 2px, transparent 2px 7px) right / 12px 100% no-repeat;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.18),
+    inset 0 0 18px rgba(255, 255, 255, 0.08);
+}
+
 .tile {
   position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
   aspect-ratio: 1;
@@ -174,12 +200,16 @@ h1 {
   cursor: default;
 }
 
+.tile:not(.is-empty) {
+  background: radial-gradient(ellipse at center 61%, rgba(39, 33, 47, 0.13) 0 18%, transparent 37%);
+}
+
 .tile:not(.is-empty):hover {
-  transform: translateY(-1px);
+  transform: scale(1.015);
 }
 
 .tile.is-selected {
-  background: transparent;
+  background: radial-gradient(ellipse at center 61%, rgba(39, 33, 47, 0.17) 0 19%, transparent 38%);
 }
 
 .tile.is-clearing {
@@ -196,7 +226,8 @@ h1 {
   box-shadow:
     inset 8px 9px 13px rgba(255, 255, 255, 0.5),
     inset -8px -10px 14px rgba(70, 38, 52, 0.24),
-    0 8px 14px rgba(50, 37, 56, 0.24);
+    0 3px 5px rgba(50, 37, 56, 0.17),
+    0 1px 1px rgba(50, 37, 56, 0.2);
   opacity: 1;
   transform: scale(1);
   transition:
@@ -210,7 +241,8 @@ h1 {
     0 0 0 4px var(--selected),
     inset 8px 9px 13px rgba(255, 255, 255, 0.5),
     inset -8px -10px 14px rgba(70, 38, 52, 0.24),
-    0 8px 14px rgba(50, 37, 56, 0.24);
+    0 3px 5px rgba(50, 37, 56, 0.17),
+    0 1px 1px rgba(50, 37, 56, 0.2);
   animation: candy-select 260ms ease;
 }
 
@@ -291,7 +323,8 @@ h1 {
     inset 8px 9px 12px rgba(255, 255, 255, 0.5),
     inset -7px -10px 14px rgba(12, 43, 36, 0.34),
     inset 0 2px 5px rgba(255, 255, 255, 0.26),
-    0 8px 14px rgba(50, 37, 56, 0.22);
+    0 3px 5px rgba(50, 37, 56, 0.16),
+    0 1px 1px rgba(50, 37, 56, 0.18);
 }
 
 .bug::before {
