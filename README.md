@@ -72,3 +72,11 @@ node experiments/min-move-distribution.js --rows 6 --cols 6 --trials 1000 --seed
 ```
 
 Sample: 65.7% clear in 3 moves, 31.6% in 4 moves, 2.6% in 5 moves, and 0.1% in 6 moves.
+
+Rock variation: start from the balanced sparse 6x6 generator with three candies of each colour, add four rocks in empty interior cells, require rocks to be non-adjacent even diagonally, and reject moves whose selected rectangle contains a rock.
+
+```sh
+node experiments/min-move-distribution.js --rows 6 --cols 6 --trials 1000 --seed 12345 --generator balanced-sparse --copies-per-color 3 --rocks 4
+```
+
+Sample: 0.2% clear in 3 moves, 0.7% in 4, 5.1% in 5, 11.1% in 6, 24.3% in 7, 25.1% in 8, 19.4% in 9, 9.7% in 10, 3.7% in 11, and 0.7% in 12.

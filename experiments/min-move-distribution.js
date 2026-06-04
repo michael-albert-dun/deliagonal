@@ -6,6 +6,7 @@ const DEFAULT_COLOR_COUNT = 4;
 const DEFAULT_TRIALS = 100;
 const DEFAULT_SEED = 12345;
 const DEFAULT_OCCUPANCY = 2 / 3;
+const ROCK = -1;
 const GENERATOR_METHOD = {
   UNIFORM: "uniform",
   FILLED_CONSTRAINED: "filled-constrained",
@@ -29,7 +30,9 @@ for (let trial = 1; trial <= options.trials; trial += 1) {
     : options.generator === GENERATOR_METHOD.SPARSE_RANDOM
       ? makeSparseRandomBoard(options.rows, options.cols, options.colorCount, options.occupancy, rng)
       : options.generator === GENERATOR_METHOD.BALANCED_SPARSE
-        ? makeBalancedSparseBoard(options.rows, options.cols, options.colorCount, options.copiesPerColor, rng)
+        ? options.rocks > 0
+          ? makeBalancedSparseBoardWithRocks(options.rows, options.cols, options.colorCount, options.copiesPerColor, options.rocks, rng)
+          : makeBalancedSparseBoard(options.rows, options.cols, options.colorCount, options.copiesPerColor, rng)
     : makeRandomBoard(options.rows, options.cols, options.colorCount, rng);
   const initialMask = boardMask(board);
   const moves = buildMoves(board, geometry, options);
@@ -65,6 +68,7 @@ printSummary({
   generator: options.generator,
   occupancy: options.occupancy,
   copiesPerColor: options.copiesPerColor,
+  rocks: options.rocks,
   analyzeSingleCornerFirst: options.analyzeSingleCornerFirst,
   threeMoveBoards,
   threeMoveBoardsWithSingleCornerFirst,
@@ -168,9 +172,10 @@ function nextMasksByClearSize(moves, mask, stats) {
 
 function buildMoves(board, geometry, options) {
   const cellsByColor = Array.from({ length: options.colorCount }, () => []);
+  const rockMask = boardRockMask(board);
 
   board.forEach((color, index) => {
-    if (color === null) {
+    if (color === null || color === ROCK) {
       return;
     }
 
@@ -194,11 +199,17 @@ function buildMoves(board, geometry, options) {
           continue;
         }
 
+        const clearMask = geometry.rectangleMasks[firstIndex][secondIndex];
+
+        if ((clearMask & rockMask) !== 0n) {
+          continue;
+        }
+
         moves.push({
           firstIndex,
           secondIndex,
           endpointsMask: bit(firstIndex) | bit(secondIndex),
-          clearMask: geometry.rectangleMasks[firstIndex][secondIndex]
+          clearMask
         });
       }
     }
@@ -310,6 +321,76 @@ function makeBalancedSparseBoard(rows, cols, colorCount, copiesPerColor, rng) {
   }
 
   throw new Error("Could not generate a balanced sparse board without a two-move solution.");
+}
+
+function makeBalancedSparseBoardWithRocks(rows, cols, colorCount, copiesPerColor, rockCount, rng) {
+  const candyCount = colorCount * copiesPerColor;
+
+  if (candyCount + rockCount > rows * cols) {
+    throw new Error("Balanced sparse board with rocks has more pieces than cells.");
+  }
+
+  for (let attempt = 1; attempt <= 10000; attempt += 1) {
+    const rockCells = chooseRockCells(rows, cols, rockCount, rng);
+    const board = Array.from({ length: rows * cols }, () => null);
+    const availableCells = Array.from({ length: rows * cols }, (_, index) => index)
+      .filter((index) => !rockCells.has(index));
+    const candyCells = shuffle(availableCells, rng).slice(0, candyCount);
+    const colors = shuffle(
+      Array.from({ length: colorCount }, (_, color) =>
+        Array.from({ length: copiesPerColor }, () => color)
+      ).flat(),
+      rng
+    );
+
+    rockCells.forEach((cell) => {
+      board[cell] = ROCK;
+    });
+    candyCells.forEach((cell, index) => {
+      board[cell] = colors[index];
+    });
+
+    if (!hasSolutionWithinTwoMoves(board, rows, cols, colorCount)) {
+      return board;
+    }
+  }
+
+  throw new Error("Could not generate a balanced sparse board with rocks without a two-move solution.");
+}
+
+function chooseRockCells(rows, cols, rockCount, rng) {
+  const interiorCells = [];
+
+  for (let row = 1; row < rows - 1; row += 1) {
+    for (let col = 1; col < cols - 1; col += 1) {
+      interiorCells.push(cellIndex(row, col, cols));
+    }
+  }
+
+  for (let attempt = 1; attempt <= 10000; attempt += 1) {
+    const rocks = new Set();
+
+    for (const cell of shuffle(interiorCells, rng)) {
+      if ([...rocks].every((rock) => !areTouching(cell, rock, cols))) {
+        rocks.add(cell);
+      }
+
+      if (rocks.size === rockCount) {
+        return rocks;
+      }
+    }
+  }
+
+  throw new Error("Could not place non-adjacent interior rocks.");
+}
+
+function areTouching(first, second, cols) {
+  const firstRow = Math.floor(first / cols);
+  const firstCol = first % cols;
+  const secondRow = Math.floor(second / cols);
+  const secondCol = second % cols;
+
+  return Math.abs(firstRow - secondRow) <= 1 && Math.abs(firstCol - secondCol) <= 1;
 }
 
 function makeConstrainedRandomBoard(rows, cols, colorCount, rng) {
@@ -457,6 +538,7 @@ function printSummary(summary) {
   } else if (summary.generator === GENERATOR_METHOD.BALANCED_SPARSE) {
     console.log(`copies per colour: ${summary.copiesPerColor}`);
   }
+  console.log(`rocks: ${summary.rocks}`);
   console.log(`trials: ${summary.trials}`);
   console.log(`seed: ${summary.seed}`);
   console.log("");
@@ -490,7 +572,13 @@ function bit(index) {
 
 function boardMask(board) {
   return board.reduce((mask, color, index) => (
-    color === null ? mask : mask | bit(index)
+    color === null || color === ROCK ? mask : mask | bit(index)
+  ), 0n);
+}
+
+function boardRockMask(board) {
+  return board.reduce((mask, color, index) => (
+    color === ROCK ? mask | bit(index) : mask
   ), 0n);
 }
 
@@ -529,6 +617,7 @@ function parseArgs(args) {
     generator: GENERATOR_METHOD.UNIFORM,
     occupancy: DEFAULT_OCCUPANCY,
     copiesPerColor: 3,
+    rocks: 0,
     analyzeSingleCornerFirst: false,
     verbose: false
   };
@@ -569,6 +658,9 @@ function parseArgs(args) {
     } else if (arg === "--copies-per-color" || arg === "--copies-per-colour") {
       options.copiesPerColor = readPositiveInteger(next, arg);
       index += 1;
+    } else if (arg === "--rocks") {
+      options.rocks = readNonNegativeInteger(next, "--rocks");
+      index += 1;
     } else if (arg === "--analyze-single-corner-first") {
       options.analyzeSingleCornerFirst = true;
     } else if (arg === "--verbose") {
@@ -586,6 +678,16 @@ function parseArgs(args) {
   }
 
   return options;
+}
+
+function readNonNegativeInteger(value, name) {
+  const number = Number(value);
+
+  if (!Number.isInteger(number) || number < 0) {
+    throw new Error(`${name} must be a non-negative integer.`);
+  }
+
+  return number;
 }
 
 function readPositiveInteger(value, name) {
@@ -637,6 +739,7 @@ Options:
   --occupancy P    sparse generator occupancy probability; default ${DEFAULT_OCCUPANCY}
   --copies-per-color N
                    balanced sparse copies per colour; default 3
+  --rocks N        add N non-adjacent interior rocks in empty cells; default 0
   --analyze-single-corner-first
                    for 3-move optima, count boards with an optimal first move clearing one corner cell
   --verbose        print per-board search sizes`);

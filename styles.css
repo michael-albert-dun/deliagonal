@@ -53,11 +53,24 @@ button {
   margin-bottom: 16px;
 }
 
-.info-button {
+.top-left-button,
+.top-right-button {
   position: absolute;
-  top: 50%;
-  right: 0;
+  top: calc(50% + 3px);
   transform: translateY(-50%);
+}
+
+.top-left-button {
+  left: 0;
+}
+
+.top-right-button {
+  right: 0;
+}
+
+.play-area.is-splash .top-left-button,
+.play-area.is-splash .top-right-button {
+  display: none;
 }
 
 .info-panel {
@@ -138,6 +151,7 @@ h1 {
   padding: 14px;
   border-radius: 8px;
   background: var(--board-bg);
+  overflow: hidden;
   box-shadow:
     0 22px 48px rgba(55, 36, 64, 0.22),
     inset 0 0 0 1px rgba(72, 52, 82, 0.1);
@@ -260,6 +274,198 @@ h1 {
   background: radial-gradient(circle at 34% 30%, #ffc8e8 0 14%, #cc79a7 56%, #925174 100%);
 }
 
+.bug {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 62%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 52% 52% 46% 46%;
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.82) 0 9%, transparent 18%),
+    radial-gradient(ellipse at 63% 30%, rgba(255, 255, 255, 0.32) 0 9%, transparent 24%),
+    radial-gradient(ellipse at 38% 13%, rgba(255, 255, 255, 0.38) 0 18%, transparent 44%),
+    radial-gradient(circle at 52% 58%, #00b989 0 38%, #009e73 57%, #006747 100%);
+  box-shadow:
+    inset 8px 9px 12px rgba(255, 255, 255, 0.5),
+    inset -7px -10px 14px rgba(12, 43, 36, 0.34),
+    inset 0 2px 5px rgba(255, 255, 255, 0.26),
+    0 8px 14px rgba(50, 37, 56, 0.22);
+}
+
+.bug::before {
+  content: "";
+  position: absolute;
+  top: 13%;
+  bottom: 13%;
+  left: 50%;
+  width: 3px;
+  border-radius: 999px;
+  background: rgba(39, 33, 47, 0.56);
+  transform: translateX(-50%);
+}
+
+.bug::after {
+  content: "";
+  position: absolute;
+  top: 25%;
+  left: 17%;
+  width: 66%;
+  height: 50%;
+  border-top: 2px solid rgba(39, 33, 47, 0.46);
+  border-bottom: 2px solid rgba(39, 33, 47, 0.34);
+  border-radius: 999px;
+}
+
+.tile.is-bug::before,
+.tile.is-bug::after {
+  content: "";
+  position: absolute;
+  top: 23%;
+  width: 14%;
+  height: 18%;
+  border-top: 2px solid rgba(39, 33, 47, 0.46);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.tile.is-bug::before {
+  left: 31%;
+  border-right: 2px solid rgba(39, 33, 47, 0.46);
+  border-radius: 0 999px 0 0;
+  transform: rotate(-22deg);
+}
+
+.tile.is-bug::after {
+  right: 31%;
+  border-left: 2px solid rgba(39, 33, 47, 0.46);
+  border-radius: 999px 0 0 0;
+  transform: rotate(22deg);
+}
+
+.tile.is-bug-escaping {
+  --bug-escape-rotation: 0deg;
+  pointer-events: none;
+  z-index: 3;
+  animation-duration: 1200ms;
+  animation-timing-function: cubic-bezier(0.36, 0.02, 0.2, 1);
+  animation-fill-mode: forwards;
+}
+
+.tile.is-bug-escaping .bug {
+  animation: bug-scuttle 280ms steps(2, end) infinite;
+}
+
+.tile.is-bug-escaping-up {
+  animation-name: bug-escape-up;
+}
+
+.tile.is-bug-escaping-right {
+  --bug-escape-rotation: 90deg;
+  animation-name: bug-escape-right;
+}
+
+.tile.is-bug-escaping-down {
+  --bug-escape-rotation: 180deg;
+  animation-name: bug-escape-down;
+}
+
+.tile.is-bug-escaping-left {
+  --bug-escape-rotation: -90deg;
+  animation-name: bug-escape-left;
+}
+
+@keyframes bug-scuttle {
+  from {
+    transform: rotate(-7deg) scaleX(0.96);
+  }
+
+  to {
+    transform: rotate(7deg) scaleX(1.04);
+  }
+}
+
+@keyframes bug-escape-up {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  22% {
+    transform: translate(0, -18%) rotate(var(--bug-escape-rotation));
+  }
+
+  45% {
+    transform: translate(8%, -90%) rotate(calc(var(--bug-escape-rotation) - 8deg));
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-10%, -420%) rotate(calc(var(--bug-escape-rotation) + 7deg));
+  }
+}
+
+@keyframes bug-escape-right {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  22% {
+    transform: translate(18%, 0) rotate(var(--bug-escape-rotation));
+  }
+
+  45% {
+    transform: translate(90%, 8%) rotate(calc(var(--bug-escape-rotation) + 8deg));
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(420%, -10%) rotate(calc(var(--bug-escape-rotation) - 7deg));
+  }
+}
+
+@keyframes bug-escape-down {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  22% {
+    transform: translate(0, 18%) rotate(var(--bug-escape-rotation));
+  }
+
+  45% {
+    transform: translate(-8%, 90%) rotate(calc(var(--bug-escape-rotation) + 8deg));
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(10%, 420%) rotate(calc(var(--bug-escape-rotation) - 7deg));
+  }
+}
+
+@keyframes bug-escape-left {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  22% {
+    transform: translate(-18%, 0) rotate(var(--bug-escape-rotation));
+  }
+
+  45% {
+    transform: translate(-90%, -8%) rotate(calc(var(--bug-escape-rotation) - 8deg));
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-420%, 10%) rotate(calc(var(--bug-escape-rotation) + 7deg));
+  }
+}
+
 .game-footer {
   display: grid;
   grid-template-columns: minmax(72px, 1fr) minmax(0, 1.7fr) minmax(88px, 1fr);
@@ -340,10 +546,117 @@ h1 {
   stroke-width: 2;
 }
 
+.candy-count-button {
+  position: relative;
+}
+
+.bug-button {
+  isolation: isolate;
+  overflow: visible;
+}
+
+.mini-candy,
+.bug-button .bug-icon {
+  position: relative;
+  display: block;
+  width: 25px;
+  height: 25px;
+}
+
+.mini-candy {
+  border-radius: 999px;
+  background: radial-gradient(circle at 34% 30%, #ffc8e8 0 14%, #cc79a7 56%, #925174 100%);
+  box-shadow:
+    inset 4px 5px 8px rgba(255, 255, 255, 0.48),
+    inset -4px -5px 8px rgba(70, 38, 52, 0.22),
+    0 3px 6px rgba(50, 37, 56, 0.16);
+}
+
+.bug-button .bug-icon {
+  border-radius: 52% 52% 46% 46%;
+  transform: translateY(2px);
+  z-index: 1;
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.82) 0 9%, transparent 18%),
+    radial-gradient(ellipse at 63% 30%, rgba(255, 255, 255, 0.32) 0 9%, transparent 24%),
+    radial-gradient(ellipse at 38% 13%, rgba(255, 255, 255, 0.38) 0 18%, transparent 44%),
+    radial-gradient(circle at 52% 58%, #00b989 0 38%, #009e73 57%, #006747 100%);
+  box-shadow:
+    inset 4px 5px 8px rgba(255, 255, 255, 0.5),
+    inset -4px -5px 8px rgba(12, 43, 36, 0.3),
+    inset 0 1px 3px rgba(255, 255, 255, 0.24),
+    0 3px 6px rgba(50, 37, 56, 0.16);
+}
+
+.bug-button .bug-icon::before {
+  content: "";
+  position: absolute;
+  top: 13%;
+  bottom: 13%;
+  left: 50%;
+  width: 2px;
+  border-radius: 999px;
+  background: rgba(39, 33, 47, 0.56);
+  transform: translateX(-50%);
+}
+
+.bug-button .bug-icon::after {
+  content: "";
+  position: absolute;
+  top: 25%;
+  left: 17%;
+  width: 66%;
+  height: 50%;
+  border-top: 1px solid rgba(39, 33, 47, 0.46);
+  border-bottom: 1px solid rgba(39, 33, 47, 0.34);
+  border-radius: 999px;
+}
+
+.bug-button::before,
+.bug-button::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  width: 7px;
+  height: 8px;
+  border-top: 1px solid rgba(39, 33, 47, 0.46);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.bug-button::before {
+  left: 11px;
+  border-right: 1px solid rgba(39, 33, 47, 0.46);
+  border-radius: 0 999px 0 0;
+  transform: rotate(-22deg);
+}
+
+.bug-button::after {
+  right: 11px;
+  border-left: 1px solid rgba(39, 33, 47, 0.46);
+  border-radius: 999px 0 0 0;
+  transform: rotate(22deg);
+}
+
+.control-subscript {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: white;
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 14px;
+}
+
 .settings-panel {
   position: absolute;
   right: 0;
   bottom: calc(100% + 8px);
+  z-index: 3;
   width: max-content;
   padding: 10px;
   border-radius: 8px;
@@ -351,6 +664,16 @@ h1 {
   box-shadow:
     0 14px 32px rgba(55, 36, 64, 0.18),
     inset 0 0 0 1px rgba(72, 52, 82, 0.12);
+}
+
+.top-panel {
+  top: 48px;
+  bottom: auto;
+}
+
+#bug-panel {
+  right: auto;
+  left: 0;
 }
 
 .settings-panel fieldset {
@@ -371,6 +694,10 @@ h1 {
   display: grid;
   grid-template-columns: repeat(5, 34px);
   gap: 4px;
+}
+
+.bug-control {
+  grid-template-columns: repeat(4, 34px);
 }
 
 .segmented-control label {

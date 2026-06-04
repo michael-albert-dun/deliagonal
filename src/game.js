@@ -7,8 +7,10 @@ const GENERATION = {
   rows: 6,
   cols: 6,
   copiesPerColor: 4,
+  bugCount: 0,
   rejectBelowMoves: 3,
-  maxAttempts: 10000
+  rejectAboveMoves: 5,
+  maxAttempts: 50000
 };
 const MODE = {
   SPLASH: "splash",
@@ -23,6 +25,7 @@ const CANDIES = [
   { key: "purple", label: "purple" }
 ];
 const COLOR_INDEX_BY_KEY = new Map(CANDIES.map((candy, index) => [candy.key, index]));
+const BUG = "bug";
 
 const state = {
   mode: MODE.SPLASH,
@@ -34,9 +37,12 @@ const state = {
   history: [],
   selected: [],
   settingsOpen: false,
+  bugSettingsOpen: false,
   infoOpen: false,
   animationToken: 0,
-  clearAnimationCells: new Set()
+  clearAnimationCells: new Set(),
+  escapingBugs: new Map(),
+  escapedBugCells: new Set()
 };
 let demoTimer = null;
 
@@ -48,9 +54,14 @@ const elements = {
   newButton: document.querySelector("#new-button"),
   infoButton: document.querySelector("#info-button"),
   infoPanel: document.querySelector("#info-panel"),
+  bugButton: document.querySelector("#bug-button"),
+  bugPanel: document.querySelector("#bug-panel"),
+  bugCountIndicator: document.querySelector("#bug-count-indicator"),
+  bugCountInputs: document.querySelectorAll("[name='bug-count']"),
   undoButton: document.querySelector("#undo-button"),
   settingsButton: document.querySelector("#settings-button"),
   settingsPanel: document.querySelector("#settings-panel"),
+  candyCountIndicator: document.querySelector("#candy-count-indicator"),
   copiesPerColorInputs: document.querySelectorAll("[name='copies-per-color']")
 };
 
@@ -59,6 +70,12 @@ elements.newButton.addEventListener("click", () => startGame());
 elements.infoButton.setAttribute("aria-controls", "info-panel");
 elements.infoButton.setAttribute("aria-expanded", "false");
 elements.infoButton.addEventListener("click", toggleInfoPanel);
+elements.bugButton.setAttribute("aria-controls", "bug-panel");
+elements.bugButton.setAttribute("aria-expanded", "false");
+elements.bugButton.addEventListener("click", toggleBugSettingsPanel);
+elements.bugCountInputs.forEach((input) => {
+  input.addEventListener("change", updateBugCount);
+});
 elements.undoButton.addEventListener("click", undoLastDeletion);
 elements.settingsButton.setAttribute("aria-controls", "settings-panel");
 elements.settingsButton.setAttribute("aria-expanded", "false");
@@ -86,9 +103,12 @@ function startSplash() {
   state.history = [];
   state.selected = [];
   state.settingsOpen = false;
+  state.bugSettingsOpen = false;
   state.infoOpen = false;
   state.animationToken += 1;
   state.clearAnimationCells.clear();
+  state.escapingBugs.clear();
+  state.escapedBugCells.clear();
   render();
   demoTimer = window.setTimeout(runDemoStep, 850);
 }
@@ -103,9 +123,13 @@ function startGame({ board = null } = {}) {
   state.deletionCount = 0;
   state.history = [];
   state.selected = [];
+  state.settingsOpen = false;
+  state.bugSettingsOpen = false;
   state.infoOpen = false;
   state.animationToken += 1;
   state.clearAnimationCells.clear();
+  state.escapingBugs.clear();
+  state.escapedBugCells.clear();
   updateAddressBar();
   render();
 }
@@ -128,7 +152,7 @@ function makeSparseRandomGrid(generation) {
       Math.random() < generation.occupancy ? randomCandyKey() : null
     ));
 
-    if (grid.some((candy) => candy !== null) && minimumMoveCount(grid) >= generation.rejectBelowMoves) {
+    if (grid.some((candy) => candy !== null) && isAcceptedMoveCount(grid, generation)) {
       return grid;
     }
   }
@@ -139,14 +163,16 @@ function makeSparseRandomGrid(generation) {
 function makeBalancedSparseGrid(generation) {
   const candyCount = CANDIES.length * generation.copiesPerColor;
 
-  if (candyCount > generation.rows * generation.cols) {
+  if (candyCount + generation.bugCount > generation.rows * generation.cols) {
     throw new Error("Balanced sparse board has more candies than cells.");
   }
 
   for (let attempt = 1; attempt <= generation.maxAttempts; attempt += 1) {
     const grid = Array.from({ length: generation.rows * generation.cols }, () => null);
+    const bugCells = chooseBugCells(generation.rows, generation.cols, generation.bugCount);
     const cells = shuffle(
       Array.from({ length: generation.rows * generation.cols }, (_, index) => index)
+        .filter((index) => !bugCells.has(index))
     ).slice(0, candyCount);
     const candies = shuffle(
       CANDIES.flatMap((candy) =>
@@ -154,16 +180,64 @@ function makeBalancedSparseGrid(generation) {
       )
     );
 
+    bugCells.forEach((cell) => {
+      grid[cell] = BUG;
+    });
     cells.forEach((cell, index) => {
       grid[cell] = candies[index];
     });
 
-    if (minimumMoveCount(grid) >= generation.rejectBelowMoves) {
+    if (isAcceptedMoveCount(grid, generation)) {
       return grid;
     }
   }
 
   throw new Error("Could not generate a balanced sparse board meeting the move threshold.");
+}
+
+function isAcceptedMoveCount(grid, generation) {
+  const moves = minimumMoveCount(grid);
+
+  return moves >= generation.rejectBelowMoves && moves <= generation.rejectAboveMoves;
+}
+
+function chooseBugCells(rows, cols, bugCount) {
+  if (bugCount === 0) {
+    return new Set();
+  }
+
+  const interiorCells = [];
+
+  for (let row = 1; row < rows - 1; row += 1) {
+    for (let col = 1; col < cols - 1; col += 1) {
+      interiorCells.push(cellIndex(row, col));
+    }
+  }
+
+  for (let attempt = 1; attempt <= 10000; attempt += 1) {
+    const bugs = new Set();
+
+    for (const cell of shuffle(interiorCells)) {
+      if ([...bugs].every((bug) => !areTouching(cell, bug))) {
+        bugs.add(cell);
+      }
+
+      if (bugs.size === bugCount) {
+        return bugs;
+      }
+    }
+  }
+
+  throw new Error("Could not place non-adjacent interior bugs.");
+}
+
+function areTouching(first, second) {
+  const firstRow = Math.floor(first / COLS);
+  const firstCol = first % COLS;
+  const secondRow = Math.floor(second / COLS);
+  const secondCol = second % COLS;
+
+  return Math.abs(firstRow - secondRow) <= 1 && Math.abs(firstCol - secondCol) <= 1;
 }
 
 function minimumMoveCount(grid) {
@@ -303,15 +377,15 @@ function render() {
 
     tile.type = "button";
     tile.className = tileClassName(cell);
-    tile.disabled = state.mode === MODE.SPLASH || cell.candy === null;
+    tile.disabled = state.mode === MODE.SPLASH || cell.candy === null || cell.candy === BUG || isMoveBudgetSpent();
     tile.dataset.id = cell.id;
     tile.setAttribute("aria-label", tileAriaLabel(cell));
     tile.addEventListener("click", () => selectCell(cell));
 
-    if (cell.candy !== null) {
+    if (cell.candy !== null && !state.escapedBugCells.has(cell.id)) {
       const candy = document.createElement("span");
 
-      candy.className = `candy candy-${cell.candy}`;
+      candy.className = cell.candy === BUG ? "bug" : `candy candy-${cell.candy}`;
       candy.setAttribute("aria-hidden", "true");
       tile.append(candy);
     }
@@ -324,10 +398,14 @@ function render() {
   elements.undoButton.disabled = state.mode !== MODE.PLAY ||
     (state.selected.length === 0 && state.history.length === 0);
   elements.newButton.textContent = state.mode === MODE.SPLASH ? "Play" : "New";
-  elements.infoPanel.hidden = !state.infoOpen;
+  elements.infoPanel.hidden = state.mode === MODE.SPLASH || !state.infoOpen;
   elements.infoButton.setAttribute("aria-expanded", String(state.infoOpen));
+  elements.bugPanel.hidden = state.mode === MODE.SPLASH || !state.bugSettingsOpen;
+  elements.bugButton.setAttribute("aria-expanded", String(state.bugSettingsOpen));
+  elements.bugCountIndicator.textContent = String(GENERATION.bugCount);
   elements.settingsPanel.hidden = !state.settingsOpen;
   elements.settingsButton.setAttribute("aria-expanded", String(state.settingsOpen));
+  elements.candyCountIndicator.textContent = String(GENERATION.copiesPerColor);
   syncSettingsInputs();
 }
 
@@ -345,7 +423,7 @@ function scoreText() {
   }
 
   if (remainingCandyCount() !== 0) {
-    return "";
+    return `Moves remaining: ${Math.max(0, state.minimumMoves - state.history.length)}`;
   }
 
   const percentScore = state.deletionCount === 0
@@ -356,9 +434,15 @@ function scoreText() {
 }
 
 function tileClassName(cell) {
+  const escapingBug = state.escapingBugs.get(cell.id);
+  const escapedBug = state.escapedBugCells.has(cell.id);
+
   return [
     "tile",
-    cell.candy === null ? "is-empty" : null,
+    cell.candy === null || escapedBug ? "is-empty" : null,
+    cell.candy === BUG && !escapedBug ? "is-bug" : null,
+    escapingBug ? "is-bug-escaping" : null,
+    escapingBug ? `is-bug-escaping-${escapingBug}` : null,
     state.selected.includes(cell.id) ? "is-selected" : null,
     state.clearAnimationCells.has(cell.id) ? "is-clearing" : null
   ].filter(Boolean).join(" ");
@@ -367,8 +451,12 @@ function tileClassName(cell) {
 function tileAriaLabel(cell) {
   const position = `row ${cell.row + 1}, column ${cell.col + 1}`;
 
-  if (cell.candy === null) {
+  if (cell.candy === null || state.escapedBugCells.has(cell.id)) {
     return `Empty tile at ${position}`;
+  }
+
+  if (cell.candy === BUG) {
+    return `Bug at ${position}`;
   }
 
   return `${candyLabel(cell.candy)} candy at ${position}`;
@@ -379,7 +467,11 @@ function selectCell(cell) {
     return;
   }
 
-  if (cell.candy === null) {
+  if (isMoveBudgetSpent()) {
+    return;
+  }
+
+  if (cell.candy === null || cell.candy === BUG) {
     return;
   }
 
@@ -402,7 +494,9 @@ function selectCell(cell) {
     return;
   }
 
-  clearRectangle(firstCell, cell);
+  if (canClearRectangle(firstCell, cell)) {
+    clearRectangle(firstCell, cell);
+  }
 }
 
 function clearRectangle(firstCell, secondCell) {
@@ -418,6 +512,11 @@ function clearRectangle(firstCell, secondCell) {
       render();
     }
   });
+}
+
+function canClearRectangle(firstCell, secondCell) {
+  return rectangleCells(firstCell, secondCell)
+    .every((cell) => cell.candy !== BUG);
 }
 
 function undoLastDeletion() {
@@ -440,6 +539,8 @@ function undoLastDeletion() {
   ));
   state.selected = [];
   state.clearAnimationCells.clear();
+  state.escapingBugs.clear();
+  state.escapedBugCells.clear();
   render();
 }
 
@@ -504,8 +605,49 @@ function clearCellsWithFade(cells, afterClear) {
     ));
     state.clearAnimationCells.clear();
     render();
+    scuttleBugsIfBoardCleared(animationToken);
     afterClear();
   }, 360);
+}
+
+function scuttleBugsIfBoardCleared(animationToken) {
+  if (remainingCandyCount() !== 0 || state.escapingBugs.size > 0) {
+    return;
+  }
+
+  const bugs = state.board.filter((cell) => (
+    cell.candy === BUG && !state.escapedBugCells.has(cell.id)
+  ));
+
+  if (bugs.length === 0) {
+    return;
+  }
+
+  state.escapingBugs = new Map(bugs.map((cell) => [cell.id, bugEscapeDirection(cell)]));
+  render();
+
+  window.setTimeout(() => {
+    if (animationToken !== state.animationToken) {
+      return;
+    }
+
+    state.escapingBugs.clear();
+    state.escapedBugCells = new Set(bugs.map((cell) => cell.id));
+    render();
+  }, 1200);
+}
+
+function bugEscapeDirection(cell) {
+  const distances = [
+    { direction: "up", distance: cell.row },
+    { direction: "right", distance: COLS - 1 - cell.col },
+    { direction: "down", distance: ROWS - 1 - cell.row },
+    { direction: "left", distance: cell.col }
+  ];
+  const nearestDistance = Math.min(...distances.map(({ distance }) => distance));
+  const nearestEdges = distances.filter(({ distance }) => distance === nearestDistance);
+
+  return nearestEdges[(cell.row + cell.col) % nearestEdges.length].direction;
 }
 
 function stopDemoLoop() {
@@ -517,6 +659,14 @@ function stopDemoLoop() {
 
 function toggleSettingsPanel() {
   state.settingsOpen = !state.settingsOpen;
+  state.bugSettingsOpen = false;
+  state.infoOpen = false;
+  render();
+}
+
+function toggleBugSettingsPanel() {
+  state.bugSettingsOpen = !state.bugSettingsOpen;
+  state.settingsOpen = false;
   state.infoOpen = false;
   render();
 }
@@ -524,11 +674,16 @@ function toggleSettingsPanel() {
 function toggleInfoPanel() {
   state.infoOpen = !state.infoOpen;
   state.settingsOpen = false;
+  state.bugSettingsOpen = false;
   render();
 }
 
 function handleKeyDown(event) {
   if (event.key.toLowerCase() !== "i" || event.metaKey || event.ctrlKey || event.altKey) {
+    return;
+  }
+
+  if (state.mode === MODE.SPLASH) {
     return;
   }
 
@@ -548,9 +703,24 @@ function updateCopiesPerColor(event) {
   startGame();
 }
 
+function updateBugCount(event) {
+  GENERATION.bugCount = Number(event.target.value);
+  state.bugSettingsOpen = false;
+
+  if (state.mode === MODE.SPLASH) {
+    startSplash();
+    return;
+  }
+
+  startGame();
+}
+
 function syncSettingsInputs() {
   elements.copiesPerColorInputs.forEach((input) => {
     input.checked = Number(input.value) === GENERATION.copiesPerColor;
+  });
+  elements.bugCountInputs.forEach((input) => {
+    input.checked = Number(input.value) === GENERATION.bugCount;
   });
 }
 
@@ -569,7 +739,13 @@ function rectangleCells(firstCell, secondCell) {
 }
 
 function remainingCandyCount() {
-  return state.board.filter((cell) => cell.candy !== null).length;
+  return state.board.filter((cell) => cell.candy !== null && cell.candy !== BUG).length;
+}
+
+function isMoveBudgetSpent() {
+  return state.mode === MODE.PLAY &&
+    remainingCandyCount() > 0 &&
+    state.history.length >= state.minimumMoves;
 }
 
 function getCellById(id) {
@@ -612,7 +788,7 @@ function loadBoardFromUrl() {
   }
 
   return makeBoardFromColorKeys([...grid].map((value) => (
-    value === "." ? null : CANDIES[Number(value)].key
+    value === "." ? null : value === "b" ? BUG : CANDIES[Number(value)].key
   )));
 }
 
@@ -630,14 +806,14 @@ function makeGridString() {
 
 function makeBoardGridString() {
   return state.board.map((cell) => (
-    cell.candy === null ? "." : COLOR_INDEX_BY_KEY.get(cell.candy)
+    cell.candy === null ? "." : cell.candy === BUG ? "b" : COLOR_INDEX_BY_KEY.get(cell.candy)
   )).join("");
 }
 
 function isValidGridString(grid) {
   return typeof grid === "string" &&
     grid.length === ROWS * COLS &&
-    [...grid].every((value) => value === "." || (/^[0-3]$/.test(value) && CANDIES[Number(value)]));
+    [...grid].every((value) => value === "." || value === "b" || (/^[0-3]$/.test(value) && CANDIES[Number(value)]));
 }
 
 function cellId(row, col) {
@@ -650,9 +826,12 @@ function cellIndex(row, col) {
 
 function legalMoveMasks(grid) {
   const cellsByCandy = new Map();
+  const bugMask = grid.reduce((mask, candy, index) => (
+    candy === BUG ? mask | bit(index) : mask
+  ), 0n);
 
   grid.forEach((candy, index) => {
-    if (candy === null) {
+    if (candy === null || candy === BUG) {
       return;
     }
 
@@ -670,11 +849,17 @@ function legalMoveMasks(grid) {
         const firstIndex = indexes[first];
         const secondIndex = indexes[second];
 
+        const clearMask = rectangleMask(firstIndex, secondIndex);
+
+        if ((clearMask & bugMask) !== 0n) {
+          continue;
+        }
+
         moves.push({
           firstIndex,
           secondIndex,
           endpointsMask: bit(firstIndex) | bit(secondIndex),
-          clearMask: rectangleMask(firstIndex, secondIndex)
+          clearMask
         });
       }
     }
@@ -705,7 +890,7 @@ function rectangleMask(firstIndex, secondIndex) {
 
 function gridMask(grid) {
   return grid.reduce((mask, candy, index) => (
-    candy === null ? mask : mask | bit(index)
+    candy === null || candy === BUG ? mask : mask | bit(index)
   ), 0n);
 }
 

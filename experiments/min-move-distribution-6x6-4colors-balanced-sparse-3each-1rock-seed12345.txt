@@ -1,0 +1,23 @@
+CandyClear minimum move distribution
+grid: 6x6
+colours: 4
+forbid boundary pairs: no
+require full rectangles: no
+generator: balanced-sparse
+copies per colour: 3
+rocks: 1
+trials: 1000
+seed: 12345
+
+moves,count,percent
+3,122,12.20
+4,300,30.00
+5,322,32.20
+6,170,17.00
+7,70,7.00
+8,13,1.30
+9,3,0.30
+
+average moves: 4.817
+average visited states: 40.9
+max visited states: 3256

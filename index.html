@@ -14,7 +14,11 @@
     <section class="play-area" aria-labelledby="title">
       <header class="top-bar">
         <h1 id="title">CandyClear</h1>
-        <button id="info-button" class="icon-button info-button" type="button" aria-label="Information">
+        <button id="bug-button" class="icon-button bug-button top-left-button" type="button" aria-label="Bugs">
+          <span class="bug-icon" aria-hidden="true"></span>
+          <span id="bug-count-indicator" class="control-subscript">0</span>
+        </button>
+        <button id="info-button" class="icon-button info-button top-right-button" type="button" aria-label="Information">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="9" />
             <path d="M12 11v5" />
@@ -24,7 +28,31 @@
         <div id="info-panel" class="info-panel" hidden>
           <p>Select two candies of the same colour to clear the rectangle between them.</p>
           <p>Select the same candy twice to clear just that candy.</p>
+          <p>Bugs block rectangles and cannot be selected.</p>
         </div>
+        <form id="bug-panel" class="settings-panel top-panel" hidden>
+          <fieldset>
+            <legend>Bugs</legend>
+            <div class="segmented-control bug-control">
+              <label>
+                <input type="radio" name="bug-count" value="0" checked>
+                <span>0</span>
+              </label>
+              <label>
+                <input type="radio" name="bug-count" value="1">
+                <span>1</span>
+              </label>
+              <label>
+                <input type="radio" name="bug-count" value="2">
+                <span>2</span>
+              </label>
+              <label>
+                <input type="radio" name="bug-count" value="3">
+                <span>3</span>
+              </label>
+            </div>
+          </fieldset>
+        </form>
       </header>
 
       <div id="board" class="board" aria-label="CandyClear board"></div>
@@ -44,11 +72,9 @@
               <path d="M4 9h10a6 6 0 0 1 0 12h-3" />
             </svg>
           </button>
-          <button id="settings-button" class="icon-button" type="button" aria-label="Settings">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
-              <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z" />
-            </svg>
+          <button id="settings-button" class="icon-button candy-count-button" type="button" aria-label="Candies per colour">
+            <span class="mini-candy" aria-hidden="true"></span>
+            <span id="candy-count-indicator" class="control-subscript">4</span>
           </button>
           <form id="settings-panel" class="settings-panel" hidden>
             <fieldset>
