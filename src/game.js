@@ -162,7 +162,7 @@ function startGame({ board = null } = {}) {
   } catch (error) {
     console.error(error);
     state.tablePending = true;
-    state.tableMessage = "No tables available. Try again, or reduce the number of candies and/or bugs.";
+    state.tableMessage = "No tables available. Try again, or reduce the number of foods and/or bugs.";
     state.settingsOpen = false;
     state.bugSettingsOpen = false;
     state.infoOpen = false;
