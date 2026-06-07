@@ -263,8 +263,16 @@ h1 {
 .play-area.is-splash #new-button {
   min-width: 128px;
   height: 52px;
+  background: var(--ink);
+  color: white;
   font-size: 1.08rem;
   font-weight: 700;
+  box-shadow: 0 8px 18px rgba(39, 33, 47, 0.2);
+}
+
+.play-area.is-splash #new-button:hover {
+  background: #3a3145;
+  box-shadow: 0 8px 18px rgba(39, 33, 47, 0.2);
 }
 
 .play-area.is-splash #new-button::before,
