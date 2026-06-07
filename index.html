@@ -4,16 +4,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CandyClear</title>
-  <link rel="stylesheet" href="styles.css?v=20260607o">
-  <script src="src/game.js?v=20260607o" defer></script>
+  <title>Deliagonal</title>
+  <link rel="stylesheet" href="styles.css?v=20260608m">
+  <script src="src/game.js?v=20260608m" defer></script>
 </head>
 
 <body>
   <main class="app">
     <section class="play-area" aria-labelledby="title">
       <header class="top-bar">
-        <h1 id="title">CandyClear</h1>
+        <h1 id="title" aria-label="Deliagonal">
+          <span class="title-deli">Deli</span>
+          <span class="title-agonal">Agonal</span>
+        </h1>
         <button id="info-button" class="icon-button info-button top-right-button" type="button" aria-label="Information">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="9" />
@@ -22,15 +25,15 @@
           </svg>
         </button>
         <div id="info-panel" class="info-panel" hidden>
-          <p>Select two candies of the same colour to clear the rectangle between them.</p>
-          <p>Select the same candy twice to clear just that candy.</p>
+          <p>Select two matching foods to clear the rectangle between them.</p>
+          <p>Select the same food twice to clear just that food.</p>
           <p>Bugs block rectangles and cannot be selected.</p>
           <p>The number below the board shows the best remaining clear count; green means you are still on pace, red means extra moves are now needed. Using the back button can put you back on track.</p>
-          <p>The check shows your progress in this session. You can be reseated to continue the session, or try another diner for a new one.</p>
+          <p>The check shows your progress in this session. You can be reseated to continue the session, or try another deli for a new one.</p>
         </div>
       </header>
 
-      <div id="board" class="board" aria-label="CandyClear board"></div>
+      <div id="board" class="board" aria-label="Deliagonal board"></div>
 
       <footer class="game-footer">
         <div class="footer-panel footer-panel-left">
@@ -70,7 +73,7 @@
             </dl>
             <div class="bill-actions">
               <button id="bill-continue-button" type="button">Reseat Me</button>
-              <button id="bill-reseat-button" type="button">Try another diner</button>
+              <button id="bill-reseat-button" type="button">Try another deli</button>
             </div>
           </div>
         </div>
@@ -79,13 +82,13 @@
           <p id="score" class="score" aria-live="polite"></p>
         </div>
         <div class="footer-panel footer-panel-right">
-          <button id="settings-button" class="icon-button candy-count-button" type="button" aria-label="Candies per colour">
+          <button id="settings-button" class="icon-button candy-count-button" type="button" aria-label="Foods per kind">
             <span class="mini-candy" aria-hidden="true"></span>
             <span id="candy-count-indicator" class="control-subscript">4</span>
           </button>
           <form id="settings-panel" class="settings-panel" hidden>
             <fieldset>
-              <legend>Candies per colour</legend>
+              <legend>Foods per kind</legend>
               <div class="segmented-control">
                 <label>
                   <input type="radio" name="copies-per-color" value="2">

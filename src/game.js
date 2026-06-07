@@ -23,13 +23,14 @@ const DINER_THEME = {
 };
 const ROWS = GENERATION.rows;
 const COLS = GENERATION.cols;
-const CANDIES = [
-  { key: "orange", label: "orange" },
-  { key: "blue", label: "blue" },
-  { key: "green", label: "green" },
-  { key: "purple", label: "purple" }
+const ACTIVE_FOOD_COUNT = 4;
+const FOOD_MENU = [
+  { key: "egg", label: "fried egg" },
+  { key: "milkshake", label: "milkshake" },
+  { key: "waffle", label: "waffle" },
+  { key: "bacon", label: "bacon" },
+  { key: "burger", label: "burger" }
 ];
-const COLOR_INDEX_BY_KEY = new Map(CANDIES.map((candy, index) => [candy.key, index]));
 const BUG = "bug";
 
 const state = {
@@ -55,6 +56,7 @@ const state = {
   infoOpen: false,
   billOpen: false,
   dinerTheme: DINER_THEME.RED,
+  activeFoods: FOOD_MENU.slice(0, ACTIVE_FOOD_COUNT),
   animationToken: 0,
   clearAnimationCells: new Set(),
   escapingBugs: new Map(),
@@ -193,6 +195,8 @@ function startGame({ board = null } = {}) {
 }
 
 function makeRandomBoard() {
+  chooseActiveFoods();
+
   if (GENERATION.method === GENERATOR_METHOD.SPARSE_RANDOM) {
     return makeBoardFromColorKeys(makeSparseRandomGrid(GENERATION));
   }
@@ -236,7 +240,8 @@ function makeSparseRandomGrid(generation) {
 }
 
 function makeBalancedSparseGrid(generation) {
-  const candyCount = CANDIES.length * generation.copiesPerColor;
+  const foods = activeFoods();
+  const candyCount = foods.length * generation.copiesPerColor;
 
   if (candyCount + generation.bugCount > generation.rows * generation.cols) {
     throw new Error("Balanced sparse board has more candies than cells.");
@@ -253,7 +258,7 @@ function makeBalancedSparseGrid(generation) {
         .filter((index) => !bugCells.has(index))
     ).slice(0, candyCount);
     const candies = shuffle(
-      CANDIES.flatMap((candy) =>
+      foods.flatMap((candy) =>
         Array.from({ length: generation.copiesPerColor }, () => candy.key)
       )
     );
@@ -626,7 +631,7 @@ function tileAriaLabel(cell) {
     return `Bug at ${position}`;
   }
 
-  return `${candyLabel(cell.candy)} candy at ${position}`;
+  return `${candyLabel(cell.candy)} at ${position}`;
 }
 
 function selectCell(cell) {
@@ -1090,7 +1095,7 @@ function getCellByIndex(index) {
 }
 
 function candyLabel(key) {
-  return CANDIES.find((candy) => candy.key === key)?.label || key;
+  return FOOD_MENU.find((food) => food.key === key)?.label || key;
 }
 
 function pluralize(word, count) {
@@ -1098,7 +1103,23 @@ function pluralize(word, count) {
 }
 
 function randomCandyKey() {
-  return CANDIES[Math.floor(Math.random() * CANDIES.length)].key;
+  const foods = activeFoods();
+
+  return foods[Math.floor(Math.random() * foods.length)].key;
+}
+
+function activeFoods() {
+  return state.activeFoods.length === ACTIVE_FOOD_COUNT
+    ? state.activeFoods
+    : FOOD_MENU.slice(0, ACTIVE_FOOD_COUNT);
+}
+
+function chooseActiveFoods() {
+  state.activeFoods = shuffle(FOOD_MENU).slice(0, ACTIVE_FOOD_COUNT);
+}
+
+function foodIndexByKey() {
+  return new Map(activeFoods().map((food, index) => [food.key, index]));
 }
 
 function shuffle(items) {
@@ -1115,13 +1136,16 @@ function shuffle(items) {
 function loadBoardFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const grid = params.get("grid");
+  const foods = foodsFromUrl(params);
 
-  if (!isValidGridString(grid)) {
+  if (!isValidGridString(grid, foods)) {
     return null;
   }
 
+  state.activeFoods = foods;
+
   return makeBoardFromColorKeys([...grid].map((value) => (
-    value === "." ? null : value === "b" ? BUG : CANDIES[Number(value)].key
+    value === "." ? null : value === "b" ? BUG : foods[Number(value)].key
   )));
 }
 
@@ -1129,6 +1153,7 @@ function updateAddressBar() {
   const url = new URL(window.location.href);
 
   url.searchParams.set("grid", makeGridString());
+  url.searchParams.set("foods", activeFoods().map((food) => food.key).join(","));
   url.hash = "";
   window.history.replaceState(null, "", url.toString());
 }
@@ -1138,15 +1163,36 @@ function makeGridString() {
 }
 
 function makeBoardGridString() {
+  const indexes = foodIndexByKey();
+
   return state.board.map((cell) => (
-    cell.candy === null ? "." : cell.candy === BUG ? "b" : COLOR_INDEX_BY_KEY.get(cell.candy)
+    cell.candy === null ? "." : cell.candy === BUG ? "b" : indexes.get(cell.candy)
   )).join("");
 }
 
-function isValidGridString(grid) {
+function foodsFromUrl(params) {
+  const keys = (params.get("foods") || "")
+    .split(",")
+    .filter(Boolean);
+  const foodsByKey = new Map(FOOD_MENU.map((food) => [food.key, food]));
+  const foods = keys.map((key) => foodsByKey.get(key));
+  const uniqueKeys = new Set(keys);
+
+  if (foods.length === ACTIVE_FOOD_COUNT && uniqueKeys.size === ACTIVE_FOOD_COUNT && foods.every(Boolean)) {
+    return foods;
+  }
+
+  return FOOD_MENU.slice(0, ACTIVE_FOOD_COUNT);
+}
+
+function isValidGridString(grid, foods = activeFoods()) {
   return typeof grid === "string" &&
     grid.length === ROWS * COLS &&
-    [...grid].every((value) => value === "." || value === "b" || (/^[0-3]$/.test(value) && CANDIES[Number(value)]));
+    [...grid].every((value) => (
+      value === "." ||
+      value === "b" ||
+      (/^[0-3]$/.test(value) && foods[Number(value)])
+    ));
 }
 
 function cellId(row, col) {
