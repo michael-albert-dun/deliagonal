@@ -40,13 +40,15 @@ const state = {
   demoMoves: [],
   history: [],
   sessionTablesSet: 0,
-  sessionMoveCount: 0,
-  sessionGreenMoveCount: 0,
+  sessionEfficientMoveCount: 0,
+  sessionInefficientMoveCount: 0,
   sessionTablesCleared: 0,
+  sessionPerfectSolutions: 0,
   tablePending: false,
   tableMessage: "",
   tableSetCounted: false,
   tableClearCounted: false,
+  tablePerfectCandidate: true,
   selected: [],
   settingsOpen: false,
   bugSettingsOpen: false,
@@ -78,6 +80,7 @@ const elements = {
   billPanel: document.querySelector("#bill-panel"),
   billTablesSet: document.querySelector("#bill-tables-set"),
   billTablesCleared: document.querySelector("#bill-tables-cleared"),
+  billPerfectSolutions: document.querySelector("#bill-perfect-solutions"),
   billMoves: document.querySelector("#bill-moves"),
   billEfficiency: document.querySelector("#bill-efficiency"),
   billContinueButton: document.querySelector("#bill-continue-button"),
@@ -131,6 +134,7 @@ function startSplash() {
   state.tablePending = false;
   state.tableSetCounted = false;
   state.tableClearCounted = false;
+  state.tablePerfectCandidate = true;
   state.selected = [];
   state.settingsOpen = false;
   state.bugSettingsOpen = false;
@@ -174,6 +178,7 @@ function startGame({ board = null } = {}) {
   state.tableMessage = "";
   state.tableSetCounted = false;
   state.tableClearCounted = false;
+  state.tablePerfectCandidate = true;
   state.selected = [];
   state.settingsOpen = false;
   state.bugSettingsOpen = false;
@@ -558,21 +563,32 @@ function isOptimalPath(moveCount, grid) {
 }
 
 function recordSessionMove(clearedCells) {
-  const wasOnOptimalPath = isOptimalPath(state.history.length, state.board.map((cell) => cell.candy));
+  const currentGrid = state.board.map((cell) => cell.candy);
+  const currentMovesRemaining = minimumMoveCount(currentGrid);
+  const wasOnOptimalPath = isOptimalPath(state.history.length, currentGrid);
   const clearedIds = new Set(clearedCells.map((cell) => cell.id));
   const nextGrid = state.board.map((cell) => (
     clearedIds.has(cell.id) && cell.candy !== BUG
       ? null
       : cell.candy
   ));
+  const nextMovesRemaining = minimumMoveCount(nextGrid);
   const remainsOnOptimalPath = isOptimalPath(state.history.length + 1, nextGrid);
+  const efficient = nextMovesRemaining < currentMovesRemaining;
 
   recordTableSet();
-  state.sessionMoveCount += 1;
 
-  if (wasOnOptimalPath && remainsOnOptimalPath) {
-    state.sessionGreenMoveCount += 1;
+  if (efficient) {
+    state.sessionEfficientMoveCount += 1;
+  } else {
+    state.sessionInefficientMoveCount += 1;
   }
+
+  if (!efficient || !wasOnOptimalPath || !remainsOnOptimalPath) {
+    state.tablePerfectCandidate = false;
+  }
+
+  return { efficient };
 }
 
 function recordTableSet() {
@@ -648,12 +664,12 @@ function selectCell(cell) {
 
 function clearRectangle(firstCell, secondCell) {
   const cells = rectangleCells(firstCell, secondCell);
-  recordSessionMove(cells);
+  const moveRecord = recordSessionMove(cells);
   const restoredCells = cells
     .filter((cell) => cell.candy !== null)
     .map((cell) => ({ id: cell.id, candy: cell.candy }));
 
-  state.history.push({ restoredCells });
+  state.history.push({ restoredCells, efficient: moveRecord.efficient });
   clearCellsWithFade(cells, () => {
     recordTableCleared();
 
@@ -682,6 +698,7 @@ function undoLastDeletion() {
   }
 
   reverseTableClearIfUndoingFromEmpty();
+  refundMoveIfUndoable(action);
   const restoredCandyById = new Map(action.restoredCells.map((cell) => [cell.id, cell.candy]));
 
   state.board = state.board.map((cell) => (
@@ -700,21 +717,28 @@ function recordTableCleared() {
   }
 
   state.sessionTablesCleared += 1;
+
+  if (state.tablePerfectCandidate) {
+    state.sessionPerfectSolutions += 1;
+  }
+
   state.tableClearCounted = true;
 }
 
 function billSummary() {
-  const efficiencyPercent = state.sessionMoveCount === 0
+  const totalMoves = state.sessionEfficientMoveCount + state.sessionInefficientMoveCount;
+  const efficiencyPercent = totalMoves === 0
     ? 0
-    : Math.round((state.sessionGreenMoveCount / state.sessionMoveCount) * 100);
+    : Math.round((state.sessionEfficientMoveCount / totalMoves) * 100);
 
   return {
     tablesSet: state.sessionTablesSet,
     tablesCleared: state.sessionTablesCleared,
-    moves: state.sessionMoveCount,
+    perfectSolutions: state.sessionPerfectSolutions,
+    moves: totalMoves,
     efficiency: {
-      effectiveMoves: state.sessionGreenMoveCount,
-      totalMoves: state.sessionMoveCount,
+      effectiveMoves: state.sessionEfficientMoveCount,
+      totalMoves,
       percent: efficiencyPercent
     }
   };
@@ -725,9 +749,18 @@ function renderBill() {
 
   elements.billTablesSet.textContent = String(bill.tablesSet);
   elements.billTablesCleared.textContent = String(bill.tablesCleared);
+  elements.billPerfectSolutions.textContent = String(bill.perfectSolutions);
   elements.billMoves.textContent = String(bill.moves);
   elements.billEfficiency.textContent =
     `${bill.efficiency.effectiveMoves}/${bill.efficiency.totalMoves} (${bill.efficiency.percent}%)`;
+}
+
+function refundMoveIfUndoable(action) {
+  if (!action.efficient) {
+    return;
+  }
+
+  state.sessionEfficientMoveCount = Math.max(0, state.sessionEfficientMoveCount - 1);
 }
 
 function reverseTableClearIfUndoingFromEmpty() {
@@ -736,6 +769,11 @@ function reverseTableClearIfUndoingFromEmpty() {
   }
 
   state.sessionTablesCleared = Math.max(0, state.sessionTablesCleared - 1);
+
+  if (state.tablePerfectCandidate) {
+    state.sessionPerfectSolutions = Math.max(0, state.sessionPerfectSolutions - 1);
+  }
+
   state.tableClearCounted = false;
 }
 
@@ -896,6 +934,7 @@ function preparePendingTableRefresh() {
   state.tableMessage = "Finding table...";
   state.tableSetCounted = false;
   state.tableClearCounted = false;
+  state.tablePerfectCandidate = true;
   state.selected = [];
   state.infoOpen = false;
   state.clearAnimationCells.clear();
@@ -977,8 +1016,9 @@ function toggleDinerTheme() {
 function resetSessionBill() {
   state.sessionTablesSet = 0;
   state.sessionTablesCleared = 0;
-  state.sessionMoveCount = 0;
-  state.sessionGreenMoveCount = 0;
+  state.sessionPerfectSolutions = 0;
+  state.sessionEfficientMoveCount = 0;
+  state.sessionInefficientMoveCount = 0;
 }
 
 function handleKeyDown(event) {
