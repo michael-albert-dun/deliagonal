@@ -10,6 +10,7 @@ const GENERATION = {
   bugCount: 0,
   rejectBelowMoves: 3,
   rejectAboveMoves: 5,
+  maxMilliseconds: 700,
   maxAttempts: 50000
 };
 const MODE = {
@@ -38,6 +39,8 @@ const state = {
   sessionMoveCount: 0,
   sessionGreenMoveCount: 0,
   sessionTablesCleared: 0,
+  tablePending: false,
+  tableMessage: "",
   tableSetCounted: false,
   tableClearCounted: false,
   selected: [],
@@ -51,6 +54,7 @@ const state = {
   escapedBugCells: new Set()
 };
 let demoTimer = null;
+let queuedNewTableTimer = null;
 
 const elements = {
   playArea: document.querySelector(".play-area"),
@@ -80,7 +84,7 @@ const elements = {
 };
 
 elements.board.style.setProperty("--board-cols", String(COLS));
-elements.newButton.addEventListener("click", () => startGame());
+elements.newButton.addEventListener("click", handleNewButton);
 elements.infoButton.setAttribute("aria-controls", "info-panel");
 elements.infoButton.setAttribute("aria-expanded", "false");
 elements.infoButton.addEventListener("click", toggleInfoPanel);
@@ -111,6 +115,7 @@ if (urlBoard) {
 }
 
 function startSplash() {
+  cancelQueuedNewTableRefresh();
   stopDemoLoop();
   state.mode = MODE.SPLASH;
   state.board = makeRandomBoard();
@@ -118,6 +123,7 @@ function startSplash() {
   state.minimumMoves = minimumMoveCount(state.board.map((cell) => cell.candy));
   state.demoMoves = findMinimumSolution(state.board.map((cell) => cell.candy));
   state.history = [];
+  state.tablePending = false;
   state.tableSetCounted = false;
   state.tableClearCounted = false;
   state.selected = [];
@@ -134,13 +140,33 @@ function startSplash() {
 }
 
 function startGame({ board = null } = {}) {
+  cancelQueuedNewTableRefresh();
   stopDemoLoop();
+
+  let nextBoard;
+
+  try {
+    nextBoard = board || makeRandomBoard();
+  } catch (error) {
+    console.error(error);
+    state.tablePending = true;
+    state.tableMessage = "No staff available. Try again, or reduce the number of candies and/or bugs.";
+    state.settingsOpen = false;
+    state.bugSettingsOpen = false;
+    state.infoOpen = false;
+    state.billOpen = false;
+    render();
+    return;
+  }
+
   state.mode = MODE.PLAY;
-  state.board = board || makeRandomBoard();
+  state.board = nextBoard;
   state.initialGrid = makeBoardGridString();
   state.minimumMoves = minimumMoveCount(state.board.map((cell) => cell.candy));
   state.demoMoves = [];
   state.history = [];
+  state.tablePending = false;
+  state.tableMessage = "";
   state.tableSetCounted = false;
   state.tableClearCounted = false;
   state.selected = [];
@@ -169,14 +195,31 @@ function makeRandomBoard() {
 }
 
 function makeSparseRandomGrid(generation) {
-  for (let attempt = 1; attempt <= generation.maxAttempts; attempt += 1) {
+  const deadline = Date.now() + generation.maxMilliseconds;
+  let fallbackGrid = null;
+
+  for (let attempt = 1; attempt <= generation.maxAttempts && Date.now() <= deadline; attempt += 1) {
     const grid = Array.from({ length: generation.rows * generation.cols }, () => (
       Math.random() < generation.occupancy ? randomCandyKey() : null
     ));
 
-    if (grid.some((candy) => candy !== null) && isAcceptedMoveCount(grid, generation)) {
+    if (!grid.some((candy) => candy !== null)) {
+      continue;
+    }
+
+    const moves = minimumMoveCount(grid, generation.rejectAboveMoves);
+
+    if (Number.isFinite(moves) && moves >= generation.rejectBelowMoves && fallbackGrid === null) {
+      fallbackGrid = grid;
+    }
+
+    if (Number.isFinite(moves) && moves >= generation.rejectBelowMoves && moves <= generation.rejectAboveMoves) {
       return grid;
     }
+  }
+
+  if (fallbackGrid !== null) {
+    return fallbackGrid;
   }
 
   throw new Error("Could not generate a sparse board meeting the move threshold.");
@@ -189,7 +232,10 @@ function makeBalancedSparseGrid(generation) {
     throw new Error("Balanced sparse board has more candies than cells.");
   }
 
-  for (let attempt = 1; attempt <= generation.maxAttempts; attempt += 1) {
+  const deadline = Date.now() + generation.maxMilliseconds;
+  let fallbackGrid = null;
+
+  for (let attempt = 1; attempt <= generation.maxAttempts && Date.now() <= deadline; attempt += 1) {
     const grid = Array.from({ length: generation.rows * generation.cols }, () => null);
     const bugCells = chooseBugCells(generation.rows, generation.cols, generation.bugCount);
     const cells = shuffle(
@@ -209,9 +255,19 @@ function makeBalancedSparseGrid(generation) {
       grid[cell] = candies[index];
     });
 
-    if (isAcceptedMoveCount(grid, generation)) {
+    const moves = minimumMoveCount(grid, generation.rejectAboveMoves);
+
+    if (Number.isFinite(moves) && moves >= generation.rejectBelowMoves && fallbackGrid === null) {
+      fallbackGrid = grid;
+    }
+
+    if (Number.isFinite(moves) && moves >= generation.rejectBelowMoves && moves <= generation.rejectAboveMoves) {
       return grid;
     }
+  }
+
+  if (fallbackGrid !== null) {
+    return fallbackGrid;
   }
 
   throw new Error("Could not generate a balanced sparse board meeting the move threshold.");
@@ -262,11 +318,12 @@ function areTouching(first, second) {
   return Math.abs(firstRow - secondRow) <= 1 && Math.abs(firstCol - secondCol) <= 1;
 }
 
-function minimumMoveCount(grid) {
+function minimumMoveCount(grid, maxDepth = ROWS * COLS) {
   const initialMask = gridMask(grid);
   const moves = legalMoveMasks(grid);
+  const depthLimit = Math.min(maxDepth, ROWS * COLS);
 
-  for (let depth = 0; depth <= ROWS * COLS; depth += 1) {
+  for (let depth = 0; depth <= depthLimit; depth += 1) {
     if (canClearWithin(moves, initialMask, depth, new Set())) {
       return depth;
     }
@@ -390,6 +447,10 @@ function makeBoardFromColorKeys(colorKeys) {
   }));
 }
 
+function makeEmptyBoard() {
+  return makeBoardFromColorKeys(Array.from({ length: ROWS * COLS }, () => null));
+}
+
 function render() {
   elements.playArea.classList.toggle("is-splash", state.mode === MODE.SPLASH);
   elements.board.innerHTML = "";
@@ -414,6 +475,15 @@ function render() {
 
     elements.board.append(tile);
   });
+
+  if (state.tablePending && state.tableMessage !== "") {
+    const message = document.createElement("p");
+
+    message.className = "board-message";
+    message.textContent = state.tableMessage;
+    message.setAttribute("aria-live", "polite");
+    elements.board.append(message);
+  }
 
   const score = scoreDisplay();
 
@@ -451,7 +521,7 @@ function challengeText() {
 }
 
 function scoreDisplay() {
-  if (state.mode === MODE.SPLASH) {
+  if (state.mode === MODE.SPLASH || state.tablePending) {
     return { text: "", onTrack: false, offTrack: false };
   }
 
@@ -776,6 +846,66 @@ function stopDemoLoop() {
   }
 }
 
+function queueNewTableRefresh() {
+  cancelQueuedNewTableRefresh();
+  queuedNewTableTimer = window.setTimeout(runQueuedNewTableRefresh, 300);
+}
+
+function runQueuedNewTableRefresh() {
+  queuedNewTableTimer = null;
+
+  if (state.settingsOpen || state.bugSettingsOpen) {
+    queueNewTableRefresh();
+    return;
+  }
+
+  if (state.mode === MODE.SPLASH) {
+    startSplash();
+    return;
+  }
+
+  startGame();
+}
+
+function handleNewButton() {
+  if (state.mode === MODE.SPLASH) {
+    startGame();
+    return;
+  }
+
+  preparePendingTableRefresh();
+  queueNewTableRefresh();
+  render();
+}
+
+function preparePendingTableRefresh() {
+  stopDemoLoop();
+  state.mode = MODE.PLAY;
+  state.board = makeEmptyBoard();
+  state.initialGrid = "";
+  state.minimumMoves = 0;
+  state.demoMoves = [];
+  state.history = [];
+  state.tablePending = true;
+  state.tableMessage = "Finding table...";
+  state.tableSetCounted = false;
+  state.tableClearCounted = false;
+  state.selected = [];
+  state.infoOpen = false;
+  state.clearAnimationCells.clear();
+  state.escapingBugs.clear();
+  state.escapedBugCells.clear();
+}
+
+function cancelQueuedNewTableRefresh() {
+  if (queuedNewTableTimer === null) {
+    return;
+  }
+
+  window.clearTimeout(queuedNewTableTimer);
+  queuedNewTableTimer = null;
+}
+
 function toggleSettingsPanel() {
   state.settingsOpen = !state.settingsOpen;
   state.bugSettingsOpen = false;
@@ -856,12 +986,9 @@ function updateCopiesPerColor(event) {
   state.settingsOpen = false;
   state.billOpen = false;
 
-  if (state.mode === MODE.SPLASH) {
-    startSplash();
-    return;
-  }
-
-  startGame();
+  preparePendingTableRefresh();
+  queueNewTableRefresh();
+  render();
 }
 
 function updateBugCount(event) {
@@ -869,12 +996,9 @@ function updateBugCount(event) {
   state.bugSettingsOpen = false;
   state.billOpen = false;
 
-  if (state.mode === MODE.SPLASH) {
-    startSplash();
-    return;
-  }
-
-  startGame();
+  preparePendingTableRefresh();
+  queueNewTableRefresh();
+  render();
 }
 
 function syncSettingsInputs() {
