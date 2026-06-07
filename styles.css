@@ -255,6 +255,10 @@ h1 {
   display: none;
 }
 
+.play-area.is-splash #undo-button {
+  display: none;
+}
+
 .play-area.is-splash .footer-panel-center,
 .play-area.is-splash .footer-panel-right {
   display: none;
