@@ -260,54 +260,30 @@ h1 {
 }
 
 .receipt-icon {
-  position: relative;
   display: block;
-  width: 25px;
-  height: 29px;
-  border: 3px solid currentColor;
-  border-bottom: 0;
-  border-radius: 4px 4px 1px 1px;
-  background:
-    linear-gradient(currentColor, currentColor) 50% 7px / 13px 2px no-repeat,
-    linear-gradient(currentColor, currentColor) 50% 13px / 17px 2px no-repeat,
-    linear-gradient(currentColor, currentColor) 50% 19px / 13px 2px no-repeat;
+  width: 30px;
+  height: 34px;
+  overflow: visible;
 }
 
-.receipt-icon::before {
-  content: "";
-  position: absolute;
-  left: -3px;
-  right: -3px;
-  bottom: -6px;
-  height: 8px;
-  background: currentColor;
-  clip-path: polygon(
-    0 0,
-    8% 52%,
-    16% 0,
-    24% 52%,
-    32% 0,
-    40% 52%,
-    48% 0,
-    56% 52%,
-    64% 0,
-    72% 52%,
-    80% 0,
-    88% 52%,
-    100% 0,
-    100% 100%,
-    0 100%
-  );
+.receipt-outline,
+.receipt-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.receipt-icon::after {
-  content: "";
-  position: absolute;
-  left: 2px;
-  right: 2px;
-  bottom: -3px;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.54);
+.receipt-outline {
+  stroke-width: 2.9;
+}
+
+.receipt-line {
+  stroke-width: 2.1;
+}
+
+.receipt-line-head {
+  stroke-width: 2.6;
 }
 
 .bill-button:hover,
