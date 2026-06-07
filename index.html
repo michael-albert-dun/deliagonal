@@ -14,10 +14,6 @@
     <section class="play-area" aria-labelledby="title">
       <header class="top-bar">
         <h1 id="title">CandyClear</h1>
-        <button id="bug-button" class="icon-button bug-button top-left-button" type="button" aria-label="Bugs">
-          <span class="bug-icon" aria-hidden="true"></span>
-          <span id="bug-count-indicator" class="control-subscript">0</span>
-        </button>
         <button id="info-button" class="icon-button info-button top-right-button" type="button" aria-label="Information">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="9" />
@@ -29,49 +25,56 @@
           <p>Select two candies of the same colour to clear the rectangle between them.</p>
           <p>Select the same candy twice to clear just that candy.</p>
           <p>Bugs block rectangles and cannot be selected.</p>
+          <p>The number below the board shows the best remaining clear count; green means you are still on pace, red means extra moves are now needed. Using the back button can put you back on track.</p>
+          <p>The check shows your progress in this session.</p>
         </div>
-        <form id="bug-panel" class="settings-panel top-panel" hidden>
-          <fieldset>
-            <legend>Bugs</legend>
-            <div class="segmented-control bug-control">
-              <label>
-                <input type="radio" name="bug-count" value="0" checked>
-                <span>0</span>
-              </label>
-              <label>
-                <input type="radio" name="bug-count" value="1">
-                <span>1</span>
-              </label>
-              <label>
-                <input type="radio" name="bug-count" value="2">
-                <span>2</span>
-              </label>
-              <label>
-                <input type="radio" name="bug-count" value="3">
-                <span>3</span>
-              </label>
-            </div>
-          </fieldset>
-        </form>
       </header>
 
       <div id="board" class="board" aria-label="CandyClear board"></div>
 
       <footer class="game-footer">
         <div class="footer-panel footer-panel-left">
-          <button id="new-button" type="button">New</button>
-        </div>
-        <div class="footer-panel footer-panel-center">
-          <p id="challenge" class="challenge" aria-live="polite">Clear in 3</p>
-          <p id="score" class="score" aria-live="polite"></p>
-        </div>
-        <div class="footer-panel footer-panel-right">
+          <button id="new-button" type="button" aria-label="New table"></button>
+          <button id="bill-button" class="bill-button" type="button" aria-label="Bill" aria-expanded="false" aria-controls="bill-panel">
+            <span class="receipt-icon" aria-hidden="true"></span>
+          </button>
           <button id="undo-button" class="icon-button" type="button" aria-label="Undo" disabled>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M9 14 4 9l5-5" />
               <path d="M4 9h10a6 6 0 0 1 0 12h-3" />
             </svg>
           </button>
+          <div id="bill-panel" class="bill-panel" hidden>
+            <h2>Guest Check</h2>
+            <dl>
+              <div>
+                <dt>Tables set</dt>
+                <dd id="bill-tables-set">0</dd>
+              </div>
+              <div>
+                <dt>Tables cleared</dt>
+                <dd id="bill-tables-cleared">0</dd>
+              </div>
+              <div>
+                <dt>Moves</dt>
+                <dd id="bill-moves">0</dd>
+              </div>
+              <div class="bill-total">
+                <dt>Efficiency</dt>
+                <dd id="bill-efficiency">0/0 (0%)</dd>
+              </div>
+            </dl>
+            <div class="bill-actions">
+              <button id="bill-continue-button" type="button">Continue</button>
+              <button id="bill-reseat-button" type="button">Be reseated</button>
+            </div>
+          </div>
+        </div>
+        <div class="footer-panel footer-panel-center">
+          <p id="challenge" class="challenge" aria-live="polite">Clear in 3</p>
+          <p id="score" class="score" aria-live="polite"></p>
+        </div>
+        <div class="footer-panel footer-panel-right">
           <button id="settings-button" class="icon-button candy-count-button" type="button" aria-label="Candies per colour">
             <span class="mini-candy" aria-hidden="true"></span>
             <span id="candy-count-indicator" class="control-subscript">4</span>
@@ -99,6 +102,33 @@
                 <label>
                   <input type="radio" name="copies-per-color" value="6">
                   <span>6</span>
+                </label>
+              </div>
+            </fieldset>
+          </form>
+          <button id="bug-button" class="icon-button bug-button" type="button" aria-label="Bugs">
+            <span class="bug-icon" aria-hidden="true"></span>
+            <span id="bug-count-indicator" class="control-subscript">0</span>
+          </button>
+          <form id="bug-panel" class="settings-panel bug-panel" hidden>
+            <fieldset>
+              <legend>Bugs</legend>
+              <div class="segmented-control bug-control">
+                <label>
+                  <input type="radio" name="bug-count" value="0" checked>
+                  <span>0</span>
+                </label>
+                <label>
+                  <input type="radio" name="bug-count" value="1">
+                  <span>1</span>
+                </label>
+                <label>
+                  <input type="radio" name="bug-count" value="2">
+                  <span>2</span>
+                </label>
+                <label>
+                  <input type="radio" name="bug-count" value="3">
+                  <span>3</span>
                 </label>
               </div>
             </fieldset>

@@ -33,12 +33,18 @@ const state = {
   initialGrid: "",
   minimumMoves: 0,
   demoMoves: [],
-  deletionCount: 0,
   history: [],
+  sessionTablesSet: 0,
+  sessionMoveCount: 0,
+  sessionGreenMoveCount: 0,
+  sessionTablesCleared: 0,
+  tableSetCounted: false,
+  tableClearCounted: false,
   selected: [],
   settingsOpen: false,
   bugSettingsOpen: false,
   infoOpen: false,
+  billOpen: false,
   animationToken: 0,
   clearAnimationCells: new Set(),
   escapingBugs: new Map(),
@@ -59,6 +65,14 @@ const elements = {
   bugCountIndicator: document.querySelector("#bug-count-indicator"),
   bugCountInputs: document.querySelectorAll("[name='bug-count']"),
   undoButton: document.querySelector("#undo-button"),
+  billButton: document.querySelector("#bill-button"),
+  billPanel: document.querySelector("#bill-panel"),
+  billTablesSet: document.querySelector("#bill-tables-set"),
+  billTablesCleared: document.querySelector("#bill-tables-cleared"),
+  billMoves: document.querySelector("#bill-moves"),
+  billEfficiency: document.querySelector("#bill-efficiency"),
+  billContinueButton: document.querySelector("#bill-continue-button"),
+  billReseatButton: document.querySelector("#bill-reseat-button"),
   settingsButton: document.querySelector("#settings-button"),
   settingsPanel: document.querySelector("#settings-panel"),
   candyCountIndicator: document.querySelector("#candy-count-indicator"),
@@ -77,6 +91,9 @@ elements.bugCountInputs.forEach((input) => {
   input.addEventListener("change", updateBugCount);
 });
 elements.undoButton.addEventListener("click", undoLastDeletion);
+elements.billButton.addEventListener("click", toggleBillPanel);
+elements.billContinueButton.addEventListener("click", continueSession);
+elements.billReseatButton.addEventListener("click", reseatSession);
 elements.settingsButton.setAttribute("aria-controls", "settings-panel");
 elements.settingsButton.setAttribute("aria-expanded", "false");
 elements.settingsButton.addEventListener("click", toggleSettingsPanel);
@@ -84,6 +101,7 @@ elements.copiesPerColorInputs.forEach((input) => {
   input.addEventListener("change", updateCopiesPerColor);
 });
 document.addEventListener("keydown", handleKeyDown);
+document.addEventListener("pointerdown", dismissInfoPanelOnOutsidePointerDown, true);
 const urlBoard = loadBoardFromUrl();
 
 if (urlBoard) {
@@ -99,12 +117,14 @@ function startSplash() {
   state.initialGrid = "";
   state.minimumMoves = minimumMoveCount(state.board.map((cell) => cell.candy));
   state.demoMoves = findMinimumSolution(state.board.map((cell) => cell.candy));
-  state.deletionCount = 0;
   state.history = [];
+  state.tableSetCounted = false;
+  state.tableClearCounted = false;
   state.selected = [];
   state.settingsOpen = false;
   state.bugSettingsOpen = false;
   state.infoOpen = false;
+  state.billOpen = false;
   state.animationToken += 1;
   state.clearAnimationCells.clear();
   state.escapingBugs.clear();
@@ -120,12 +140,14 @@ function startGame({ board = null } = {}) {
   state.initialGrid = makeBoardGridString();
   state.minimumMoves = minimumMoveCount(state.board.map((cell) => cell.candy));
   state.demoMoves = [];
-  state.deletionCount = 0;
   state.history = [];
+  state.tableSetCounted = false;
+  state.tableClearCounted = false;
   state.selected = [];
   state.settingsOpen = false;
   state.bugSettingsOpen = false;
   state.infoOpen = false;
+  state.billOpen = false;
   state.animationToken += 1;
   state.clearAnimationCells.clear();
   state.escapingBugs.clear();
@@ -377,7 +399,7 @@ function render() {
 
     tile.type = "button";
     tile.className = tileClassName(cell);
-    tile.disabled = state.mode === MODE.SPLASH || cell.candy === null || cell.candy === BUG || isMoveBudgetSpent();
+    tile.disabled = state.mode === MODE.SPLASH || cell.candy === null || cell.candy === BUG;
     tile.dataset.id = cell.id;
     tile.setAttribute("aria-label", tileAriaLabel(cell));
     tile.addEventListener("click", () => selectCell(cell));
@@ -393,16 +415,27 @@ function render() {
     elements.board.append(tile);
   });
 
+  const score = scoreDisplay();
+
   elements.challenge.textContent = challengeText();
-  elements.score.textContent = scoreText();
+  elements.score.textContent = score.text;
+  elements.score.classList.toggle("is-on-track", score.onTrack);
+  elements.score.classList.toggle("is-off-track", score.offTrack);
   elements.undoButton.disabled = state.mode !== MODE.PLAY ||
     (state.selected.length === 0 && state.history.length === 0);
-  elements.newButton.textContent = state.mode === MODE.SPLASH ? "Play" : "New";
+  elements.newButton.textContent = state.mode === MODE.SPLASH ? "Play" : "";
+  elements.newButton.setAttribute(
+    "aria-label",
+    state.mode === MODE.SPLASH ? "Play" : "New table"
+  );
   elements.infoPanel.hidden = state.mode === MODE.SPLASH || !state.infoOpen;
   elements.infoButton.setAttribute("aria-expanded", String(state.infoOpen));
   elements.bugPanel.hidden = state.mode === MODE.SPLASH || !state.bugSettingsOpen;
   elements.bugButton.setAttribute("aria-expanded", String(state.bugSettingsOpen));
   elements.bugCountIndicator.textContent = String(GENERATION.bugCount);
+  elements.billPanel.hidden = state.mode === MODE.SPLASH || !state.billOpen;
+  elements.billButton.setAttribute("aria-expanded", String(state.billOpen));
+  renderBill();
   elements.settingsPanel.hidden = !state.settingsOpen;
   elements.settingsButton.setAttribute("aria-expanded", String(state.settingsOpen));
   elements.candyCountIndicator.textContent = String(GENERATION.copiesPerColor);
@@ -414,23 +447,65 @@ function challengeText() {
     return "";
   }
 
-  return `Clear in ${state.minimumMoves}`;
+  return "";
 }
 
-function scoreText() {
+function scoreDisplay() {
   if (state.mode === MODE.SPLASH) {
-    return "";
+    return { text: "", onTrack: false, offTrack: false };
   }
 
-  if (remainingCandyCount() !== 0) {
-    return `Moves remaining: ${Math.max(0, state.minimumMoves - state.history.length)}`;
+  const movesRemaining = currentMinimumMovesRemaining();
+  const onOptimalPath = isOptimalPath(state.history.length, displayCandyGrid());
+
+  return {
+    text: String(movesRemaining),
+    onTrack: onOptimalPath,
+    offTrack: !onOptimalPath
+  };
+}
+
+function currentMinimumMovesRemaining() {
+  return minimumMoveCount(displayCandyGrid());
+}
+
+function displayCandyGrid() {
+  return state.board.map((cell) => (
+    state.clearAnimationCells.has(cell.id) && cell.candy !== BUG
+      ? null
+      : cell.candy
+  ));
+}
+
+function isOptimalPath(moveCount, grid) {
+  return moveCount + minimumMoveCount(grid) === state.minimumMoves;
+}
+
+function recordSessionMove(clearedCells) {
+  const wasOnOptimalPath = isOptimalPath(state.history.length, state.board.map((cell) => cell.candy));
+  const clearedIds = new Set(clearedCells.map((cell) => cell.id));
+  const nextGrid = state.board.map((cell) => (
+    clearedIds.has(cell.id) && cell.candy !== BUG
+      ? null
+      : cell.candy
+  ));
+  const remainsOnOptimalPath = isOptimalPath(state.history.length + 1, nextGrid);
+
+  recordTableSet();
+  state.sessionMoveCount += 1;
+
+  if (wasOnOptimalPath && remainsOnOptimalPath) {
+    state.sessionGreenMoveCount += 1;
+  }
+}
+
+function recordTableSet() {
+  if (state.mode !== MODE.PLAY || state.tableSetCounted) {
+    return;
   }
 
-  const percentScore = state.deletionCount === 0
-    ? 0
-    : Math.round((state.minimumMoves / state.deletionCount) * 100);
-
-  return `${state.minimumMoves}/${state.deletionCount} (${percentScore}%)`;
+  state.sessionTablesSet += 1;
+  state.tableSetCounted = true;
 }
 
 function tileClassName(cell) {
@@ -467,10 +542,6 @@ function selectCell(cell) {
     return;
   }
 
-  if (isMoveBudgetSpent()) {
-    return;
-  }
-
   if (cell.candy === null || cell.candy === BUG) {
     return;
   }
@@ -501,13 +572,15 @@ function selectCell(cell) {
 
 function clearRectangle(firstCell, secondCell) {
   const cells = rectangleCells(firstCell, secondCell);
+  recordSessionMove(cells);
   const restoredCells = cells
     .filter((cell) => cell.candy !== null)
     .map((cell) => ({ id: cell.id, candy: cell.candy }));
 
   state.history.push({ restoredCells });
-  state.deletionCount += 1;
   clearCellsWithFade(cells, () => {
+    recordTableCleared();
+
     if (state.mode === MODE.PLAY) {
       render();
     }
@@ -532,6 +605,7 @@ function undoLastDeletion() {
     return;
   }
 
+  reverseTableClearIfUndoingFromEmpty();
   const restoredCandyById = new Map(action.restoredCells.map((cell) => [cell.id, cell.candy]));
 
   state.board = state.board.map((cell) => (
@@ -542,6 +616,51 @@ function undoLastDeletion() {
   state.escapingBugs.clear();
   state.escapedBugCells.clear();
   render();
+}
+
+function recordTableCleared() {
+  if (state.mode !== MODE.PLAY || state.tableClearCounted || remainingCandyCount() !== 0) {
+    return;
+  }
+
+  state.sessionTablesCleared += 1;
+  state.tableClearCounted = true;
+}
+
+function billSummary() {
+  const efficiencyPercent = state.sessionMoveCount === 0
+    ? 0
+    : Math.round((state.sessionGreenMoveCount / state.sessionMoveCount) * 100);
+
+  return {
+    tablesSet: state.sessionTablesSet,
+    tablesCleared: state.sessionTablesCleared,
+    moves: state.sessionMoveCount,
+    efficiency: {
+      effectiveMoves: state.sessionGreenMoveCount,
+      totalMoves: state.sessionMoveCount,
+      percent: efficiencyPercent
+    }
+  };
+}
+
+function renderBill() {
+  const bill = billSummary();
+
+  elements.billTablesSet.textContent = String(bill.tablesSet);
+  elements.billTablesCleared.textContent = String(bill.tablesCleared);
+  elements.billMoves.textContent = String(bill.moves);
+  elements.billEfficiency.textContent =
+    `${bill.efficiency.effectiveMoves}/${bill.efficiency.totalMoves} (${bill.efficiency.percent}%)`;
+}
+
+function reverseTableClearIfUndoingFromEmpty() {
+  if (!state.tableClearCounted || remainingCandyCount() !== 0) {
+    return;
+  }
+
+  state.sessionTablesCleared = Math.max(0, state.sessionTablesCleared - 1);
+  state.tableClearCounted = false;
 }
 
 function runDemoStep() {
@@ -661,6 +780,7 @@ function toggleSettingsPanel() {
   state.settingsOpen = !state.settingsOpen;
   state.bugSettingsOpen = false;
   state.infoOpen = false;
+  state.billOpen = false;
   render();
 }
 
@@ -668,6 +788,7 @@ function toggleBugSettingsPanel() {
   state.bugSettingsOpen = !state.bugSettingsOpen;
   state.settingsOpen = false;
   state.infoOpen = false;
+  state.billOpen = false;
   render();
 }
 
@@ -675,7 +796,46 @@ function toggleInfoPanel() {
   state.infoOpen = !state.infoOpen;
   state.settingsOpen = false;
   state.bugSettingsOpen = false;
+  state.billOpen = false;
   render();
+}
+
+function dismissInfoPanelOnOutsidePointerDown(event) {
+  if (!state.infoOpen) {
+    return;
+  }
+
+  if (elements.infoPanel.contains(event.target) || elements.infoButton.contains(event.target)) {
+    return;
+  }
+
+  state.infoOpen = false;
+  render();
+}
+
+function toggleBillPanel() {
+  state.billOpen = !state.billOpen;
+  state.settingsOpen = false;
+  state.bugSettingsOpen = false;
+  state.infoOpen = false;
+  render();
+}
+
+function continueSession() {
+  state.billOpen = false;
+  render();
+}
+
+function reseatSession() {
+  resetSessionBill();
+  startGame();
+}
+
+function resetSessionBill() {
+  state.sessionTablesSet = 0;
+  state.sessionTablesCleared = 0;
+  state.sessionMoveCount = 0;
+  state.sessionGreenMoveCount = 0;
 }
 
 function handleKeyDown(event) {
@@ -694,6 +854,7 @@ function handleKeyDown(event) {
 function updateCopiesPerColor(event) {
   GENERATION.copiesPerColor = Number(event.target.value);
   state.settingsOpen = false;
+  state.billOpen = false;
 
   if (state.mode === MODE.SPLASH) {
     startSplash();
@@ -706,6 +867,7 @@ function updateCopiesPerColor(event) {
 function updateBugCount(event) {
   GENERATION.bugCount = Number(event.target.value);
   state.bugSettingsOpen = false;
+  state.billOpen = false;
 
   if (state.mode === MODE.SPLASH) {
     startSplash();
@@ -740,12 +902,6 @@ function rectangleCells(firstCell, secondCell) {
 
 function remainingCandyCount() {
   return state.board.filter((cell) => cell.candy !== null && cell.candy !== BUG).length;
-}
-
-function isMoveBudgetSpent() {
-  return state.mode === MODE.PLAY &&
-    remainingCandyCount() > 0 &&
-    state.history.length >= state.minimumMoves;
 }
 
 function getCellById(id) {
