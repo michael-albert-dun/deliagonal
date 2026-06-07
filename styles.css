@@ -137,10 +137,7 @@ button {
 }
 
 h1 {
-  display: inline-flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 0.2em;
+  display: inline-block;
   margin: 0;
   padding: 0.16em 0.3em 0.2em;
   border: 3px solid #2f2632;
@@ -163,8 +160,28 @@ h1 {
     0 -1px 0 rgba(255, 255, 255, 0.68);
 }
 
+.title-sign {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.2em;
+}
+
+.title-sign-blue {
+  display: none;
+}
+
+.play-area.is-blue-diner .title-sign-red {
+  display: none;
+}
+
+.play-area.is-blue-diner .title-sign-blue {
+  display: inline-flex;
+}
+
 .title-deli,
-.title-agonal {
+.title-agonal,
+.title-diagona {
   display: inline-block;
 }
 
@@ -177,6 +194,17 @@ h1 {
 
 .title-agonal {
   font-size: 1em;
+}
+
+.title-diagona {
+  font-size: 1em;
+}
+
+.title-sign-blue .title-deli {
+  margin-right: 0;
+  margin-left: -0.02em;
+  transform: translateY(-0.44em) rotate(4deg);
+  transform-origin: left bottom;
 }
 
 #new-button {

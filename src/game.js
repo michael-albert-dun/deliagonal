@@ -67,6 +67,7 @@ let queuedNewTableTimer = null;
 
 const elements = {
   playArea: document.querySelector(".play-area"),
+  title: document.querySelector("#title"),
   board: document.querySelector("#board"),
   challenge: document.querySelector("#challenge"),
   score: document.querySelector("#score"),
@@ -469,6 +470,10 @@ function makeEmptyBoard() {
 function render() {
   elements.playArea.classList.toggle("is-splash", state.mode === MODE.SPLASH);
   elements.playArea.classList.toggle("is-blue-diner", state.dinerTheme === DINER_THEME.BLUE);
+  elements.title.setAttribute(
+    "aria-label",
+    state.dinerTheme === DINER_THEME.BLUE ? "Diagona Deli" : "Deliagonal"
+  );
   elements.board.innerHTML = "";
 
   state.board.forEach((cell) => {
