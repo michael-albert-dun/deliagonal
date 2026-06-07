@@ -17,6 +17,10 @@ const MODE = {
   SPLASH: "splash",
   PLAY: "play"
 };
+const DINER_THEME = {
+  RED: "red",
+  BLUE: "blue"
+};
 const ROWS = GENERATION.rows;
 const COLS = GENERATION.cols;
 const CANDIES = [
@@ -48,6 +52,7 @@ const state = {
   bugSettingsOpen: false,
   infoOpen: false,
   billOpen: false,
+  dinerTheme: DINER_THEME.RED,
   animationToken: 0,
   clearAnimationCells: new Set(),
   escapingBugs: new Map(),
@@ -453,6 +458,7 @@ function makeEmptyBoard() {
 
 function render() {
   elements.playArea.classList.toggle("is-splash", state.mode === MODE.SPLASH);
+  elements.playArea.classList.toggle("is-blue-diner", state.dinerTheme === DINER_THEME.BLUE);
   elements.board.innerHTML = "";
 
   state.board.forEach((cell) => {
@@ -958,7 +964,14 @@ function continueSession() {
 
 function reseatSession() {
   resetSessionBill();
+  toggleDinerTheme();
   startGame();
+}
+
+function toggleDinerTheme() {
+  state.dinerTheme = state.dinerTheme === DINER_THEME.RED
+    ? DINER_THEME.BLUE
+    : DINER_THEME.RED;
 }
 
 function resetSessionBill() {

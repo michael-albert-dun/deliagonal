@@ -5,6 +5,13 @@
   --muted: #6f6478;
   --panel: #ffffff;
   --board-bg: #efe7f0;
+  --gingham-line: rgba(164, 47, 49, 0.18);
+  --neon-fill: #ffe2a8;
+  --neon-edge: rgba(93, 52, 85, 0.64);
+  --neon-primary: rgba(255, 86, 182, 0.92);
+  --neon-primary-soft: rgba(255, 86, 182, 0.72);
+  --neon-secondary: rgba(61, 204, 198, 0.48);
+  --neon-shadow: #2d2536;
   --selected: #2f2640;
 }
 
@@ -37,6 +44,17 @@ button {
 .play-area {
   position: relative;
   width: min(100%, 480px);
+}
+
+.play-area.is-blue-diner {
+  --board-bg: #e8eef5;
+  --gingham-line: rgba(32, 98, 166, 0.2);
+  --neon-fill: #dff7ff;
+  --neon-edge: rgba(40, 72, 116, 0.62);
+  --neon-primary: rgba(36, 174, 255, 0.9);
+  --neon-primary-soft: rgba(36, 174, 255, 0.68);
+  --neon-secondary: rgba(255, 112, 187, 0.46);
+  --neon-shadow: #243247;
 }
 
 .top-bar,
@@ -118,20 +136,20 @@ button {
 
 h1 {
   margin: 0;
-  color: #ffe2a8;
+  color: var(--neon-fill);
   font-family: "Arial Rounded MT Bold", "Trebuchet MS", "Segoe UI", sans-serif;
   font-size: clamp(2rem, 8vw, 3.25rem);
   font-weight: 900;
   line-height: 0.92;
   letter-spacing: 0;
   text-shadow:
-    0 1px 0 rgba(93, 52, 85, 0.64),
+    0 1px 0 var(--neon-edge),
     0 -1px 0 rgba(255, 255, 255, 0.72),
     0 0 2px #fff,
-    0 0 7px rgba(255, 86, 182, 0.92),
-    0 0 14px rgba(255, 86, 182, 0.72),
-    0 0 24px rgba(61, 204, 198, 0.48),
-    0 2px 0 #2d2536;
+    0 0 7px var(--neon-primary),
+    0 0 14px var(--neon-primary-soft),
+    0 0 24px var(--neon-secondary),
+    0 2px 0 var(--neon-shadow);
 }
 
 #new-button {
@@ -305,8 +323,8 @@ h1 {
     linear-gradient(rgba(239, 231, 240, 0.76), rgba(239, 231, 240, 0.76)),
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.15) 0 1px, transparent 1px 6px),
     repeating-linear-gradient(90deg, rgba(80, 48, 58, 0.05) 0 1px, transparent 1px 7px),
-    repeating-linear-gradient(0deg, rgba(164, 47, 49, 0.18) 0 26px, transparent 26px 52px),
-    repeating-linear-gradient(90deg, rgba(164, 47, 49, 0.18) 0 26px, transparent 26px 52px),
+    repeating-linear-gradient(0deg, var(--gingham-line) 0 26px, transparent 26px 52px),
+    repeating-linear-gradient(90deg, var(--gingham-line) 0 26px, transparent 26px 52px),
     var(--board-bg);
   overflow: hidden;
   box-shadow:
